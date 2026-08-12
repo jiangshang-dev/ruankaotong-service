@@ -1,0 +1,23 @@
+server:
+  port: 9001
+
+spring:
+  application:
+    name: ruankao-back
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
+
+# AgentScope 2：OpenAI 兼容端点（本地 vLLM / 通义等）
+ruankao:
+  ai:
+    base-url: ${LLM_BASE_URL:http://192.168.1.62:8000/v1}
+    model-name: ${LLM_MODEL_NAME:/data/model/Qwen3.5-35B-A3B-GPTQ-Int4}
+    api-key: ${LLM_API_KEY:sk-local}
+    stream: false
+    # 系统提示词文件（classpath:prompts/ 下）
+    polish-prompt: classpath:prompts/ruankao-polish-system.txt
+    score-prompt: classpath:prompts/ruankao-score-system.txt
+    # 单次请求超时（秒）
+    timeout-seconds: 180
