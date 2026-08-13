@@ -18,12 +18,15 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 /**
  * 软考论文 AI：每次请求新建 ReActAgent，不挂 session / longTermMemory，无历史落盘。
  */
+@Slf4j
 @Service
 public class EssayAiService {
 
@@ -77,13 +80,17 @@ public class EssayAiService {
                 .maxIters(1)
                 .build();
 
+        log.info("sys prompt:{}", agent.getSysPrompt());
+        log.info("system prompt:{}", agent.getSystemPrompt());
+
         Msg msg = Msg.builder()
                 .role(MsgRole.USER)
                 .textContent(userText)
                 .build();
 
-        Msg response = agent.call(msg)
-                .block(Duration.ofSeconds(Math.max(30, props.getTimeoutSeconds())));
+        Msg response = agent.call(msg).block(Duration.ofSeconds(Math.max(30, props.getTimeoutSeconds())));
+        log.info("消息内容:{}", response.getTextContent());
+        log.info("消息内容:{}", response.getContent());
         if (response == null || !StringUtils.hasText(response.getTextContent())) {
             throw new IllegalStateException("模型未返回有效内容");
         }

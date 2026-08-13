@@ -44,6 +44,13 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!-- OpenAPI 3 / Swagger UI：@Operation、@Tag、@Schema 等 -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>2.8.6</version>
+        </dependency>
+
         <!-- AgentScope 2：ReActAgent（无 Harness / Redis / 记忆） -->
         <dependency>
             <groupId>io.agentscope</groupId>
