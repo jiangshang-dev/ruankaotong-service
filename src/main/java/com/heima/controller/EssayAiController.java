@@ -1,6 +1,8 @@
 package com.heima.controller;
 
 import com.heima.dto.EssayAiDtos.ApiError;
+import com.heima.dto.EssayAiDtos.EssayGuideRequest;
+import com.heima.dto.EssayAiDtos.EssayGuideResponse;
 import com.heima.dto.EssayAiDtos.EssayPolishRequest;
 import com.heima.dto.EssayAiDtos.EssayPolishResponse;
 import com.heima.dto.EssayAiDtos.EssayScoreRequest;
@@ -19,7 +21,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "论文 AI", description = "软考论文润色与评分相关接口")
+@Tag(name = "论文 AI", description = "软考论文润色、评分与写作指导")
 @RestController
 @RequestMapping("/api/ai/essay")
 public class EssayAiController {
@@ -64,6 +66,23 @@ public class EssayAiController {
     @PostMapping("/score")
     public EssayScoreResponse score(@RequestBody EssayScoreRequest request) {
         return essayAiService.score(request);
+    }
+
+    @Operation(
+            summary = "论文指导",
+            description = "根据题目文字或截图（多模态）给出写作方案、技巧意见，并杜撰一个可写的大型项目举例。"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "指导成功",
+                    content = @Content(schema = @Schema(implementation = EssayGuideResponse.class))),
+            @ApiResponse(responseCode = "400", description = "参数错误（题目为空）",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "500", description = "模型或服务异常",
+                    content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
+    @PostMapping("/guide")
+    public EssayGuideResponse guide(@RequestBody EssayGuideRequest request) {
+        return essayAiService.guide(request);
     }
 
     @Operation(summary = "健康检查", description = "用于确认 AI 服务进程可用")

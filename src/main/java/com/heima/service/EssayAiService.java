@@ -3,14 +3,23 @@ package com.heima.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.heima.config.AiProperties;
+import com.heima.dto.EssayAiDtos.EssayGuideRequest;
+import com.heima.dto.EssayAiDtos.EssayGuideResponse;
+import com.heima.dto.EssayAiDtos.EssayGuideSection;
+import com.heima.dto.EssayAiDtos.EssayImage;
 import com.heima.dto.EssayAiDtos.EssayPolishRequest;
 import com.heima.dto.EssayAiDtos.EssayPolishResponse;
+import com.heima.dto.EssayAiDtos.EssayProjectExample;
 import com.heima.dto.EssayAiDtos.EssayScoreRequest;
 import com.heima.dto.EssayAiDtos.EssayScoreResponse;
 import com.heima.dto.EssayAiDtos.ScoreDimension;
 import io.agentscope.core.ReActAgent;
+import io.agentscope.core.message.Base64Source;
+import io.agentscope.core.message.ContentBlock;
+import io.agentscope.core.message.ImageBlock;
 import io.agentscope.core.message.Msg;
 import io.agentscope.core.message.MsgRole;
+import io.agentscope.core.message.TextBlock;
 import io.agentscope.extensions.model.openai.OpenAIChatModel;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -64,6 +73,19 @@ public class EssayAiService {
         return parseScore(raw);
     }
 
+    public EssayGuideResponse guide(EssayGuideRequest req) {
+        List<EssayImage> images = normalizeImages(req == null ? null : req.images());
+        if (images.isEmpty() && (req == null || !StringUtils.hasText(req.topic()))) {
+            throw new IllegalArgumentException("请先填写或粘贴论文题目后再指导");
+        }
+        String sys = promptLoader.load(props.getGuidePrompt());
+        log.info("系统提示词【论文指导】{}", sys);
+        String user = buildGuideUserPrompt(req);
+        log.info("用户提问：{}", user);
+        String raw = callVision("ruankao-essay-guide", sys, user, images);
+        return parseGuide(raw);
+    }
+
     private String callOnce(String agentName, String sysPrompt, String userText) {
         OpenAIChatModel model = OpenAIChatModel.builder()
                 .apiKey(props.getApiKey())
@@ -95,6 +117,81 @@ public class EssayAiService {
             throw new IllegalStateException("模型未返回有效内容");
         }
         return response.getTextContent().trim();
+    }
+
+    private String callVision(String agentName, String sysPrompt, String userText, List<EssayImage> images) {
+        OpenAIChatModel model = OpenAIChatModel.builder()
+                .apiKey(props.getApiKey())
+                .baseUrl(props.getBaseUrl())
+                .modelName(images.isEmpty() ? props.getModelName() : props.resolveVisionModelName())
+                .stream(props.isStream())
+                .build();
+
+        ReActAgent agent = ReActAgent.builder()
+                .name(agentName)
+                .sysPrompt(sysPrompt)
+                .model(model)
+                .maxIters(1)
+                .build();
+
+        Msg msg = buildUserMsg(userText, images);
+        Msg response = agent.call(msg).block(Duration.ofSeconds(Math.max(30, props.getTimeoutSeconds())));
+        if (response == null || !StringUtils.hasText(response.getTextContent())) {
+            throw new IllegalStateException("模型未返回有效内容");
+        }
+        return response.getTextContent().trim();
+    }
+
+    private static Msg buildUserMsg(String userText, List<EssayImage> images) {
+        if (images == null || images.isEmpty()) {
+            return Msg.builder().role(MsgRole.USER).textContent(userText).build();
+        }
+        List<ContentBlock> blocks = new ArrayList<>();
+        blocks.add(TextBlock.builder().text(userText).build());
+        for (EssayImage image : images) {
+            String b64 = stripDataUrl(image.base64());
+            if (!StringUtils.hasText(b64)) {
+                continue;
+            }
+            String mime = StringUtils.hasText(image.mimeType()) ? image.mimeType().trim() : "image/png";
+            blocks.add(ImageBlock.builder()
+                    .source(Base64Source.builder()
+                            .data(b64)
+                            .mediaType(mime)
+                            .build())
+                    .build());
+        }
+        return Msg.builder().role(MsgRole.USER).content(blocks).build();
+    }
+
+    private static List<EssayImage> normalizeImages(List<EssayImage> images) {
+        if (images == null || images.isEmpty()) {
+            return List.of();
+        }
+        List<EssayImage> out = new ArrayList<>();
+        for (EssayImage image : images) {
+            if (image == null || !StringUtils.hasText(image.base64())) {
+                continue;
+            }
+            out.add(image);
+            if (out.size() >= 8) {
+                break;
+            }
+        }
+        return out;
+    }
+
+    private static String stripDataUrl(String raw) {
+        if (!StringUtils.hasText(raw)) {
+            return "";
+        }
+        String text = raw.trim();
+        int comma = text.indexOf(',');
+        String lower = text.toLowerCase(Locale.ROOT);
+        if (lower.startsWith("data:") && comma > 0) {
+            return text.substring(comma + 1).trim();
+        }
+        return text;
     }
 
     private static String normalizePart(String part) {
@@ -142,6 +239,27 @@ public class EssayAiService {
                 nullToEmpty(req.topic()),
                 nullToEmpty(req.abstractText()),
                 nullToEmpty(req.bodyText()));
+    }
+
+    private static String buildGuideUserPrompt(EssayGuideRequest req) {
+        return """
+                科目：%s
+
+                论文题目与要求（文字，可空；若同时有截图，以截图为准并对照文字）：
+                %s
+
+                考生当前摘要（可空，仅作参考，不要当成必须润色的对象）：
+                %s
+
+                考生当前正文（可空）：
+                %s
+
+                请按系统要求输出 JSON 论文指导。
+                """.formatted(
+                nullToEmpty(req == null ? null : req.subject()),
+                nullToEmpty(req == null ? null : req.topic()),
+                nullToEmpty(req == null ? null : req.abstractText()),
+                nullToEmpty(req == null ? null : req.bodyText()));
     }
 
     private EssayPolishResponse parsePolish(String part, String raw, EssayPolishRequest req) {
@@ -202,6 +320,60 @@ public class EssayAiService {
                     "模型返回内容无法解析为标准 JSON，请查看 raw。",
                     List.of(),
                     List.of(),
+                    raw);
+        }
+    }
+
+    private EssayGuideResponse parseGuide(String raw) {
+        String json = extractJson(raw);
+        try {
+            JsonNode root = objectMapper.readTree(json);
+            List<EssayGuideSection> framework = new ArrayList<>();
+            JsonNode arr = root.path("framework");
+            if (arr.isArray()) {
+                for (JsonNode n : arr) {
+                    framework.add(new EssayGuideSection(
+                            n.path("name").asText(""),
+                            n.path("words").asText(""),
+                            n.path("content").asText("")));
+                }
+            }
+            JsonNode p = root.path("project");
+            EssayProjectExample project = new EssayProjectExample(
+                    p.path("name").asText(""),
+                    p.path("industry").asText(""),
+                    p.path("company").asText(""),
+                    p.path("role").asText(""),
+                    p.path("period").asText(""),
+                    p.path("background").asText(""),
+                    p.path("modules").asText(""),
+                    p.path("techChoice").asText(""),
+                    p.path("effects").asText(""),
+                    p.path("story").asText(""));
+            return new EssayGuideResponse(
+                    root.path("recognizedTopic").asText(""),
+                    readStringList(root.path("subQuestions")),
+                    readStringList(root.path("coreArguments")),
+                    root.path("timePlan").asText(""),
+                    framework,
+                    readStringList(root.path("tips")),
+                    readStringList(root.path("pitfalls")),
+                    project,
+                    root.path("abstractDraft").asText(""),
+                    root.path("bodyOutline").asText(""),
+                    raw);
+        } catch (Exception e) {
+            return new EssayGuideResponse(
+                    "",
+                    List.of(),
+                    List.of(),
+                    "",
+                    List.of(),
+                    List.of(),
+                    List.of(),
+                    new EssayProjectExample("", "", "", "", "", "", "", "", "", ""),
+                    "",
+                    raw,
                     raw);
         }
     }

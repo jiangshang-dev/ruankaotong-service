@@ -83,6 +83,83 @@ public final class EssayAiDtos {
     ) {
     }
 
+    @Schema(description = "论文题目截图")
+    public record EssayImage(
+            @Schema(description = "MIME，如 image/png", example = "image/png")
+            String mimeType,
+            @Schema(description = "图片 base64，可带或不带 data: 前缀")
+            String base64
+    ) {
+    }
+
+    @Schema(description = "论文指导请求")
+    public record EssayGuideRequest(
+            @Schema(description = "考试科目", example = "系统架构设计师")
+            String subject,
+            @Schema(description = "论文题目与要求（文字，可与截图同时给）")
+            String topic,
+            @Schema(description = "当前摘要，可空")
+            String abstractText,
+            @Schema(description = "当前正文，可空")
+            String bodyText,
+            @Schema(description = "题目截图，可空")
+            List<EssayImage> images
+    ) {
+    }
+
+    @Schema(description = "论文框架一段")
+    public record EssayGuideSection(
+            @Schema(description = "段落名称", example = "摘要")
+            String name,
+            @Schema(description = "建议字数", example = "280-300")
+            String words,
+            @Schema(description = "本段应写内容")
+            String content
+    ) {
+    }
+
+    @Schema(description = "为考生杜撰的大型项目举例")
+    public record EssayProjectExample(
+            String name,
+            String industry,
+            String company,
+            String role,
+            String period,
+            String background,
+            String modules,
+            String techChoice,
+            String effects,
+            String story
+    ) {
+    }
+
+    @Schema(description = "论文指导响应")
+    public record EssayGuideResponse(
+            @Schema(description = "识读出的论文标题")
+            String recognizedTopic,
+            @Schema(description = "题目各小问")
+            List<String> subQuestions,
+            @Schema(description = "对应各小问的核心论点")
+            List<String> coreArguments,
+            @Schema(description = "120 分钟时间分配")
+            String timePlan,
+            @Schema(description = "写作框架")
+            List<EssayGuideSection> framework,
+            @Schema(description = "针对本题的技巧与意见")
+            List<String> tips,
+            @Schema(description = "易踩的坑")
+            List<String> pitfalls,
+            @Schema(description = "大型项目举例")
+            EssayProjectExample project,
+            @Schema(description = "摘要草稿")
+            String abstractDraft,
+            @Schema(description = "正文提纲")
+            String bodyOutline,
+            @Schema(description = "模型原始返回")
+            String raw
+    ) {
+    }
+
     @Schema(description = "通用错误或健康检查消息")
     public record ApiError(
             @Schema(description = "消息内容", example = "ok")

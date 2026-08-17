@@ -1,13 +1,16 @@
 server:
   port: 9001
+  tomcat:
+    max-http-form-post-size: 30MB
+    max-swallow-size: 30MB
 
 spring:
   application:
     name: ruankao-back
   servlet:
     multipart:
-      max-file-size: 20MB
-      max-request-size: 20MB
+      max-file-size: 30MB
+      max-request-size: 30MB
 
 # AgentScope 2：OpenAI 兼容端点（本地 vLLM / 通义等）
 ruankao:
@@ -19,6 +22,11 @@ ruankao:
     # 系统提示词文件（classpath:prompts/ 下）
     polish-prompt: classpath:prompts/ruankao-polish-system.txt
     score-prompt: classpath:prompts/ruankao-score-system.txt
+    case-solve-prompt: classpath:prompts/ruankao-case-solve-system.txt
+    case-score-prompt: classpath:prompts/ruankao-case-score-system.txt
+    guide-prompt: classpath:prompts/ruankao-essay-guide-system.txt
+    # 案例分析识图模型；留空则使用 model-name。主模型不支持图片时改为 qwen-vl-max / qwen3-vl-plus 等
+    vision-model-name: ${LLM_VISION_MODEL_NAME:}
     # 单次请求超时（秒）
     timeout-seconds: 180
 

@@ -11,6 +11,11 @@ public class AiProperties {
     private boolean stream = false;
     private String polishPrompt = "classpath:prompts/ruankao-polish-system.txt";
     private String scorePrompt = "classpath:prompts/ruankao-score-system.txt";
+    private String caseSolvePrompt = "classpath:prompts/ruankao-case-solve-system.txt";
+    private String caseScorePrompt = "classpath:prompts/ruankao-case-score-system.txt";
+    private String guidePrompt = "classpath:prompts/ruankao-essay-guide-system.txt";
+    /** 多模态识图模型；为空则回退到 modelName */
+    private String visionModelName = "";
     private int timeoutSeconds = 180;
 
     public String getBaseUrl() {
@@ -59,6 +64,46 @@ public class AiProperties {
 
     public void setScorePrompt(String scorePrompt) {
         this.scorePrompt = scorePrompt;
+    }
+
+    public String getCaseSolvePrompt() {
+        return caseSolvePrompt;
+    }
+
+    public void setCaseSolvePrompt(String caseSolvePrompt) {
+        this.caseSolvePrompt = caseSolvePrompt;
+    }
+
+    public String getCaseScorePrompt() {
+        return caseScorePrompt;
+    }
+
+    public void setCaseScorePrompt(String caseScorePrompt) {
+        this.caseScorePrompt = caseScorePrompt;
+    }
+
+    public String getGuidePrompt() {
+        return guidePrompt;
+    }
+
+    public void setGuidePrompt(String guidePrompt) {
+        this.guidePrompt = guidePrompt;
+    }
+
+    public String getVisionModelName() {
+        return visionModelName;
+    }
+
+    public void setVisionModelName(String visionModelName) {
+        this.visionModelName = visionModelName;
+    }
+
+    /** 案例分析识图：优先 vision-model-name，否则使用主模型 */
+    public String resolveVisionModelName() {
+        if (visionModelName != null && !visionModelName.isBlank()) {
+            return visionModelName.trim();
+        }
+        return modelName;
     }
 
     public int getTimeoutSeconds() {
