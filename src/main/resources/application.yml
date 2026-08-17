@@ -7,10 +7,21 @@ server:
 spring:
   application:
     name: ruankao-back
+  main:
+    web-application-type: servlet
   servlet:
     multipart:
       max-file-size: 30MB
       max-request-size: 30MB
+  mvc:
+    async:
+      request-timeout: 240000
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 3s
 
 # AgentScope 2：OpenAI 兼容端点（本地 vLLM / 通义等）
 ruankao:
@@ -25,6 +36,7 @@ ruankao:
     case-solve-prompt: classpath:prompts/ruankao-case-solve-system.txt
     case-score-prompt: classpath:prompts/ruankao-case-score-system.txt
     guide-prompt: classpath:prompts/ruankao-essay-guide-system.txt
+    guide-stream-prompt: classpath:prompts/ruankao-essay-guide-stream-system.txt
     # 案例分析识图模型；留空则使用 model-name。主模型不支持图片时改为 qwen-vl-max / qwen3-vl-plus 等
     vision-model-name: ${LLM_VISION_MODEL_NAME:}
     # 单次请求超时（秒）

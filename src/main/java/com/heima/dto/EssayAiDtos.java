@@ -103,7 +103,45 @@ public final class EssayAiDtos {
             @Schema(description = "当前正文，可空")
             String bodyText,
             @Schema(description = "题目截图，可空")
-            List<EssayImage> images
+            List<EssayImage> images,
+            @Schema(description = "科目 ID，用于 Redis 历史分组", example = "architect")
+            String subjectId,
+            @Schema(description = "论文文件名，用于 Redis 历史；未保存可用草稿 key")
+            String fileName
+    ) {
+    }
+
+    @Schema(description = "论文指导流式事件")
+    public record EssayGuideStreamEvent(
+            @Schema(description = "delta=增量，done=结束，error=失败", example = "delta")
+            String type,
+            @Schema(description = "本次增量文本；error 时为错误信息")
+            String delta,
+            @Schema(description = "已生成的完整 Markdown（done/error 时带回）")
+            String markdown,
+            @Schema(description = "本条指导 ID")
+            String id,
+            @Schema(description = "创建时间戳")
+            Long createdAt
+    ) {
+    }
+
+    @Schema(description = "论文指导历史记录")
+    public record EssayGuideHistoryRecord(
+            String id,
+            long createdAt,
+            String subjectId,
+            String fileName,
+            String topic,
+            String markdown
+    ) {
+    }
+
+    @Schema(description = "论文指导历史列表")
+    public record EssayGuideHistoryResponse(
+            String subjectId,
+            String fileName,
+            List<EssayGuideHistoryRecord> records
     ) {
     }
 

@@ -3,9 +3,12 @@ package com.heima.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.heima.config.AiProperties;
+import com.heima.dto.EssayAiDtos.EssayGuideHistoryRecord;
+import com.heima.dto.EssayAiDtos.EssayGuideHistoryResponse;
 import com.heima.dto.EssayAiDtos.EssayGuideRequest;
 import com.heima.dto.EssayAiDtos.EssayGuideResponse;
 import com.heima.dto.EssayAiDtos.EssayGuideSection;
+import com.heima.dto.EssayAiDtos.EssayGuideStreamEvent;
 import com.heima.dto.EssayAiDtos.EssayImage;
 import com.heima.dto.EssayAiDtos.EssayPolishRequest;
 import com.heima.dto.EssayAiDtos.EssayPolishResponse;
@@ -14,19 +17,34 @@ import com.heima.dto.EssayAiDtos.EssayScoreRequest;
 import com.heima.dto.EssayAiDtos.EssayScoreResponse;
 import com.heima.dto.EssayAiDtos.ScoreDimension;
 import io.agentscope.core.ReActAgent;
+import io.agentscope.core.agent.RuntimeContext;
+import io.agentscope.core.event.AgentEvent;
+import io.agentscope.core.event.AgentResultEvent;
+import io.agentscope.core.event.TextBlockDeltaEvent;
+import io.agentscope.core.event.ThinkingBlockDeltaEvent;
 import io.agentscope.core.message.Base64Source;
 import io.agentscope.core.message.ContentBlock;
 import io.agentscope.core.message.ImageBlock;
 import io.agentscope.core.message.Msg;
 import io.agentscope.core.message.MsgRole;
 import io.agentscope.core.message.TextBlock;
+import io.agentscope.core.model.GenerateOptions;
+import io.agentscope.core.tool.Toolkit;
 import io.agentscope.extensions.model.openai.OpenAIChatModel;
+import io.agentscope.harness.agent.HarnessAgent;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -47,11 +65,24 @@ public class EssayAiService {
     private final AiProperties props;
     private final PromptLoader promptLoader;
     private final ObjectMapper objectMapper;
+    private final EssayGuideHistoryService historyService;
+    private final Path harnessWorkspace;
 
-    public EssayAiService(AiProperties props, PromptLoader promptLoader, ObjectMapper objectMapper) {
+    public EssayAiService(
+            AiProperties props,
+            PromptLoader promptLoader,
+            ObjectMapper objectMapper,
+            EssayGuideHistoryService historyService) {
         this.props = props;
         this.promptLoader = promptLoader;
         this.objectMapper = objectMapper;
+        this.historyService = historyService;
+        this.harnessWorkspace = Path.of(System.getProperty("java.io.tmpdir"), "ruankao-harness");
+        try {
+            Files.createDirectories(this.harnessWorkspace);
+        } catch (IOException e) {
+            throw new IllegalStateException("无法创建 HarnessAgent 工作目录: " + this.harnessWorkspace, e);
+        }
     }
 
     public EssayPolishResponse polish(EssayPolishRequest req) {
@@ -79,11 +110,144 @@ public class EssayAiService {
             throw new IllegalArgumentException("请先填写或粘贴论文题目后再指导");
         }
         String sys = promptLoader.load(props.getGuidePrompt());
-        log.info("系统提示词【论文指导】{}", sys);
         String user = buildGuideUserPrompt(req);
-        log.info("用户提问：{}", user);
         String raw = callVision("ruankao-essay-guide", sys, user, images);
         return parseGuide(raw);
+    }
+
+    public EssayGuideHistoryResponse listGuideHistory(String subjectId, String fileName) {
+        return historyService.list(subjectId, fileName);
+    }
+
+    /**
+     * 论文指导流式输出：HarnessAgent.streamEvents，接口直接返回 Flux。
+     */
+    public Flux<EssayGuideStreamEvent> guideStream(EssayGuideRequest req) {
+        List<EssayImage> images = normalizeImages(req == null ? null : req.images());
+        if (images.isEmpty() && (req == null || !StringUtils.hasText(req.topic()))) {
+            throw new IllegalArgumentException("请先填写或粘贴论文题目后再指导");
+        }
+
+        String sys = promptLoader.load(props.getGuideStreamPrompt());
+        String user = buildGuideStreamUserPrompt(req);
+        Msg userMsg = buildUserMsg(user, images);
+
+        String recordId = UUID.randomUUID().toString().replace("-", "");
+        long createdAt = System.currentTimeMillis();
+        String subjectId = EssayGuideHistoryService.normalize(req == null ? null : req.subjectId(), "_");
+        String fileName = EssayGuideHistoryService.normalize(req == null ? null : req.fileName(), "_unsaved");
+        String topicHint = nullToEmpty(req == null ? null : req.topic());
+        StringBuilder acc = new StringBuilder();
+        StringBuilder preview = new StringBuilder();
+
+        HarnessAgent agent = buildGuideHarness(
+                sys, images.isEmpty() ? props.getModelName() : props.resolveVisionModelName());
+        RuntimeContext runtimeContext = RuntimeContext.builder()
+                .sessionId(recordId)
+                .userId(subjectId)
+                .build();
+
+        Flux<AgentEvent> agentEvent = agent.streamEvents(userMsg, runtimeContext);
+        return agentEvent.subscribeOn(Schedulers.boundedElastic())
+                .<EssayGuideStreamEvent>handle((event, sink) -> {
+                    String delta = extractStreamDelta(event);
+                    if (StringUtils.hasText(delta)) {
+                        if (event instanceof TextBlockDeltaEvent) {
+                            acc.append(delta);
+                        } else if (acc.isEmpty()) {
+                            preview.append(delta);
+                        }
+                        String markdown = acc.isEmpty() ? preview.toString() : acc.toString();
+                        sink.next(new EssayGuideStreamEvent("delta", delta, markdown, recordId, createdAt));
+                        return;
+                    }
+                    if (event instanceof AgentResultEvent resultEvent && acc.isEmpty()) {
+                        String text = resultEvent.getResult() != null
+                                ? resultEvent.getResult().getTextContent()
+                                : null;
+                        if (StringUtils.hasText(text)) {
+                            acc.append(text);
+                            sink.next(new EssayGuideStreamEvent("delta", text, acc.toString(), recordId, createdAt));
+                        }
+                    }
+                })
+                .concatWith(Mono.fromSupplier(() -> {
+                    String markdown = acc.isEmpty() ? preview.toString().trim() : acc.toString().trim();
+                    persistGuideHistory(recordId, createdAt, subjectId, fileName, topicHint, markdown);
+                    return new EssayGuideStreamEvent("done", "", markdown, recordId, createdAt);
+                }))
+                .timeout(Duration.ofSeconds(Math.max(30, props.getTimeoutSeconds())))
+                .onErrorResume(e -> {
+                    log.error("论文指导流式失败", e);
+                    String markdown = acc.isEmpty() ? preview.toString().trim() : acc.toString().trim();
+                    if (StringUtils.hasText(markdown)) {
+                        persistGuideHistory(recordId, createdAt, subjectId, fileName, topicHint, markdown);
+                    }
+                    String msg = e.getMessage() == null ? "指导生成失败" : e.getMessage();
+                    return Flux.just(new EssayGuideStreamEvent("error", msg, markdown, recordId, createdAt));
+                });
+    }
+
+    private static String extractStreamDelta(AgentEvent event) {
+        if (event instanceof TextBlockDeltaEvent textEvent) {
+            return textEvent.getDelta();
+        }
+        if (event instanceof ThinkingBlockDeltaEvent thinkingEvent) {
+            return thinkingEvent.getDelta();
+        }
+        return null;
+    }
+
+    private void persistGuideHistory(
+            String id,
+            long createdAt,
+            String subjectId,
+            String fileName,
+            String topicHint,
+            String markdown) {
+        if (!StringUtils.hasText(markdown)) {
+            return;
+        }
+        historyService.save(new EssayGuideHistoryRecord(
+                id,
+                createdAt,
+                subjectId,
+                fileName,
+                extractGuideTopic(topicHint, markdown),
+                markdown));
+    }
+
+    private HarnessAgent buildGuideHarness(String sysPrompt, String modelName) {
+        OpenAIChatModel model = OpenAIChatModel.builder()
+                .apiKey(props.getApiKey())
+                .baseUrl(props.getBaseUrl())
+                .modelName(modelName)
+                .stream(true)
+                .build();
+
+        return HarnessAgent.builder()
+                .name("ruankao-essay-guide")
+                .sysPrompt(sysPrompt)
+                .model(model)
+                .workspace(harnessWorkspace)
+                .maxIters(1)
+                .generateOptions(GenerateOptions.builder().build())
+                .toolkit(new Toolkit())
+                .disableFilesystemTools()
+                .disableShellTool()
+                .disableWorkspaceContext()
+                .disableMemoryTools()
+                .disableMemoryHooks()
+                .disableSubagents()
+                .disableDynamicSubagents()
+                .disableToolsConfig()
+                .disableDynamicSkills()
+                .disableDefaultWorkspaceSkills()
+                .disableCompaction()
+                .disableToolResultEviction()
+                .disableAtPathExpansion()
+                .skillsEnabled(false)
+                .build();
     }
 
     private String callOnce(String agentName, String sysPrompt, String userText) {
@@ -260,6 +424,41 @@ public class EssayAiService {
                 nullToEmpty(req == null ? null : req.topic()),
                 nullToEmpty(req == null ? null : req.abstractText()),
                 nullToEmpty(req == null ? null : req.bodyText()));
+    }
+
+    private static String buildGuideStreamUserPrompt(EssayGuideRequest req) {
+        return """
+                科目：%s
+
+                论文题目与要求（文字，可空；若同时有截图，以截图为准并对照文字）：
+                %s
+
+                考生当前摘要（可空，仅作参考，不要当成必须润色的对象）：
+                %s
+
+                考生当前正文（可空）：
+                %s
+
+                请按系统要求用 Markdown 流式输出论文指导。
+                """.formatted(
+                nullToEmpty(req == null ? null : req.subject()),
+                nullToEmpty(req == null ? null : req.topic()),
+                nullToEmpty(req == null ? null : req.abstractText()),
+                nullToEmpty(req == null ? null : req.bodyText()));
+    }
+
+    private static String extractGuideTopic(String topicHint, String markdown) {
+        if (StringUtils.hasText(markdown)) {
+            Matcher m = Pattern.compile("^#\\s+(.+)$", Pattern.MULTILINE).matcher(markdown);
+            if (m.find() && StringUtils.hasText(m.group(1))) {
+                return m.group(1).trim();
+            }
+        }
+        if (!StringUtils.hasText(topicHint)) {
+            return "";
+        }
+        String first = topicHint.trim().lines().findFirst().orElse("").trim();
+        return first.length() > 80 ? first.substring(0, 80) : first;
     }
 
     private EssayPolishResponse parsePolish(String part, String raw, EssayPolishRequest req) {

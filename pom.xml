@@ -43,6 +43,10 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
+        </dependency>
 
         <!-- OpenAPI 3 / Swagger UI：@Operation、@Tag、@Schema 等 -->
         <dependency>
@@ -51,7 +55,7 @@
             <version>2.8.6</version>
         </dependency>
 
-        <!-- AgentScope 2：ReActAgent（无 Harness / Redis / 记忆） -->
+        <!-- AgentScope 2：ReActAgent + HarnessAgent 流式 -->
         <dependency>
             <groupId>io.agentscope</groupId>
             <artifactId>agentscope-core</artifactId>
@@ -59,8 +63,18 @@
         </dependency>
         <dependency>
             <groupId>io.agentscope</groupId>
+            <artifactId>agentscope-harness</artifactId>
+            <version>${agentscope.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.agentscope</groupId>
             <artifactId>agentscope-extensions-model-openai</artifactId>
             <version>${agentscope.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
 
         <dependency>

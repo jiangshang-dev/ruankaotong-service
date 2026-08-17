@@ -14,6 +14,7 @@ public class AiProperties {
     private String caseSolvePrompt = "classpath:prompts/ruankao-case-solve-system.txt";
     private String caseScorePrompt = "classpath:prompts/ruankao-case-score-system.txt";
     private String guidePrompt = "classpath:prompts/ruankao-essay-guide-system.txt";
+    private String guideStreamPrompt = "classpath:prompts/ruankao-essay-guide-stream-system.txt";
     /** 多模态识图模型；为空则回退到 modelName */
     private String visionModelName = "";
     private int timeoutSeconds = 180;
@@ -88,6 +89,14 @@ public class AiProperties {
 
     public void setGuidePrompt(String guidePrompt) {
         this.guidePrompt = guidePrompt;
+    }
+
+    public String getGuideStreamPrompt() {
+        return guideStreamPrompt;
+    }
+
+    public void setGuideStreamPrompt(String guideStreamPrompt) {
+        this.guideStreamPrompt = guideStreamPrompt;
     }
 
     public String getVisionModelName() {

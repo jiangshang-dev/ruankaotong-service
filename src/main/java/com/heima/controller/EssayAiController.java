@@ -1,8 +1,10 @@
 package com.heima.controller;
 
 import com.heima.dto.EssayAiDtos.ApiError;
+import com.heima.dto.EssayAiDtos.EssayGuideHistoryResponse;
 import com.heima.dto.EssayAiDtos.EssayGuideRequest;
 import com.heima.dto.EssayAiDtos.EssayGuideResponse;
+import com.heima.dto.EssayAiDtos.EssayGuideStreamEvent;
 import com.heima.dto.EssayAiDtos.EssayPolishRequest;
 import com.heima.dto.EssayAiDtos.EssayPolishResponse;
 import com.heima.dto.EssayAiDtos.EssayScoreRequest;
@@ -14,12 +16,17 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Flux;
 
 @Tag(name = "论文 AI", description = "软考论文润色、评分与写作指导")
 @RestController
@@ -83,6 +90,26 @@ public class EssayAiController {
     @PostMapping("/guide")
     public EssayGuideResponse guide(@RequestBody EssayGuideRequest request) {
         return essayAiService.guide(request);
+    }
+
+    @Operation(
+            summary = "论文指导（流式）",
+            description = "直接返回 Flux，边生成边推送；禁止 SseEmitter。"
+    )
+    @PostMapping(value = "/guide/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<EssayGuideStreamEvent> guideStream(
+            @RequestBody EssayGuideRequest request, HttpServletResponse response) {
+        response.setHeader(HttpHeaders.CACHE_CONTROL, "no-cache");
+        response.setHeader("X-Accel-Buffering", "no");
+        return essayAiService.guideStream(request);
+    }
+
+    @Operation(summary = "论文指导历史", description = "按科目与论文文件名读取 Redis 中的指导记录")
+    @GetMapping("/guide/history")
+    public EssayGuideHistoryResponse guideHistory(
+            @RequestParam(required = false, defaultValue = "") String subjectId,
+            @RequestParam(required = false, defaultValue = "") String fileName) {
+        return essayAiService.listGuideHistory(subjectId, fileName);
     }
 
     @Operation(summary = "健康检查", description = "用于确认 AI 服务进程可用")
