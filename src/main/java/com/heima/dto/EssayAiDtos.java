@@ -104,21 +104,23 @@ public final class EssayAiDtos {
             String bodyText,
             @Schema(description = "题目截图，可空")
             List<EssayImage> images,
-            @Schema(description = "科目 ID，用于 Redis 历史分组", example = "architect")
+            @Schema(description = "科目 ID，作为 AgentScope userId", example = "architect")
             String subjectId,
-            @Schema(description = "论文文件名，用于 Redis 历史；未保存可用草稿 key")
+            @Schema(description = "论文文件名，作为 AgentScope sessionId；未保存可用草稿 key")
             String fileName
     ) {
     }
 
     @Schema(description = "论文指导流式事件")
     public record EssayGuideStreamEvent(
-            @Schema(description = "delta=增量，done=结束，error=失败", example = "delta")
+            @Schema(description = "think_delta=思考增量，delta=正文增量，done=结束，error=失败")
             String type,
             @Schema(description = "本次增量文本；error 时为错误信息")
             String delta,
-            @Schema(description = "已生成的完整 Markdown（done/error 时带回）")
+            @Schema(description = "已生成的指导正文 Markdown")
             String markdown,
+            @Schema(description = "已生成的思考过程 Markdown")
+            String thinking,
             @Schema(description = "本条指导 ID")
             String id,
             @Schema(description = "创建时间戳")
@@ -133,7 +135,8 @@ public final class EssayAiDtos {
             String subjectId,
             String fileName,
             String topic,
-            String markdown
+            String markdown,
+            String thinking
     ) {
     }
 

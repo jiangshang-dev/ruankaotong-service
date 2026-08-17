@@ -3,7 +3,6 @@ package com.heima.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.heima.config.AiProperties;
-import com.heima.dto.EssayAiDtos.EssayGuideHistoryRecord;
 import com.heima.dto.EssayAiDtos.EssayGuideHistoryResponse;
 import com.heima.dto.EssayAiDtos.EssayGuideRequest;
 import com.heima.dto.EssayAiDtos.EssayGuideResponse;
@@ -29,6 +28,7 @@ import io.agentscope.core.message.Msg;
 import io.agentscope.core.message.MsgRole;
 import io.agentscope.core.message.TextBlock;
 import io.agentscope.core.model.GenerateOptions;
+import io.agentscope.core.state.AgentStateStore;
 import io.agentscope.core.tool.Toolkit;
 import io.agentscope.extensions.model.openai.OpenAIChatModel;
 import io.agentscope.harness.agent.HarnessAgent;
@@ -51,7 +51,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 /**
- * 软考论文 AI：每次请求新建 ReActAgent，不挂 session / longTermMemory，无历史落盘。
+ * 软考论文 AI。论文指导流式会话由 AgentScope RedisAgentStateStore 按 (userId, sessionId) 落 agent_state。
  */
 @Slf4j
 @Service
@@ -66,17 +66,20 @@ public class EssayAiService {
     private final PromptLoader promptLoader;
     private final ObjectMapper objectMapper;
     private final EssayGuideHistoryService historyService;
+    private final AgentStateStore agentStateStore;
     private final Path harnessWorkspace;
 
     public EssayAiService(
             AiProperties props,
             PromptLoader promptLoader,
             ObjectMapper objectMapper,
-            EssayGuideHistoryService historyService) {
+            EssayGuideHistoryService historyService,
+            AgentStateStore agentStateStore) {
         this.props = props;
         this.promptLoader = promptLoader;
         this.objectMapper = objectMapper;
         this.historyService = historyService;
+        this.agentStateStore = agentStateStore;
         this.harnessWorkspace = Path.of(System.getProperty("java.io.tmpdir"), "ruankao-harness");
         try {
             Files.createDirectories(this.harnessWorkspace);
@@ -134,31 +137,39 @@ public class EssayAiService {
 
         String recordId = UUID.randomUUID().toString().replace("-", "");
         long createdAt = System.currentTimeMillis();
-        String subjectId = EssayGuideHistoryService.normalize(req == null ? null : req.subjectId(), "_");
-        String fileName = EssayGuideHistoryService.normalize(req == null ? null : req.fileName(), "_unsaved");
-        String topicHint = nullToEmpty(req == null ? null : req.topic());
+        String subjectId = EssayGuideHistoryService.userId(req == null ? null : req.subjectId());
+        String fileName = EssayGuideHistoryService.sessionId(req == null ? null : req.fileName());
         StringBuilder acc = new StringBuilder();
         StringBuilder preview = new StringBuilder();
 
         HarnessAgent agent = buildGuideHarness(
                 sys, images.isEmpty() ? props.getModelName() : props.resolveVisionModelName());
         RuntimeContext runtimeContext = RuntimeContext.builder()
-                .sessionId(recordId)
+                .sessionId(fileName)
                 .userId(subjectId)
                 .build();
 
-        Flux<AgentEvent> agentEvent = agent.streamEvents(userMsg, runtimeContext);
-        return agentEvent.subscribeOn(Schedulers.boundedElastic())
+        Flux<AgentEvent> xxx = agent.streamEvents(userMsg, runtimeContext);
+        return xxx.subscribeOn(Schedulers.boundedElastic())
                 .<EssayGuideStreamEvent>handle((event, sink) -> {
-                    String delta = extractStreamDelta(event);
-                    if (StringUtils.hasText(delta)) {
-                        if (event instanceof TextBlockDeltaEvent) {
-                            acc.append(delta);
-                        } else if (acc.isEmpty()) {
-                            preview.append(delta);
+                    if (event instanceof ThinkingBlockDeltaEvent thinkingEvent) {
+                        String delta = thinkingEvent.getDelta();
+                        if (!StringUtils.hasText(delta)) {
+                            return;
                         }
-                        String markdown = acc.isEmpty() ? preview.toString() : acc.toString();
-                        sink.next(new EssayGuideStreamEvent("delta", delta, markdown, recordId, createdAt));
+                        preview.append(delta);
+                        sink.next(new EssayGuideStreamEvent(
+                                "think_delta", delta, acc.toString(), preview.toString(), recordId, createdAt));
+                        return;
+                    }
+                    if (event instanceof TextBlockDeltaEvent textEvent) {
+                        String delta = textEvent.getDelta();
+                        if (!StringUtils.hasText(delta)) {
+                            return;
+                        }
+                        acc.append(delta);
+                        sink.next(new EssayGuideStreamEvent(
+                                "delta", delta, acc.toString(), preview.toString(), recordId, createdAt));
                         return;
                     }
                     if (event instanceof AgentResultEvent resultEvent && acc.isEmpty()) {
@@ -167,54 +178,24 @@ public class EssayAiService {
                                 : null;
                         if (StringUtils.hasText(text)) {
                             acc.append(text);
-                            sink.next(new EssayGuideStreamEvent("delta", text, acc.toString(), recordId, createdAt));
+                            sink.next(new EssayGuideStreamEvent(
+                                    "delta", text, acc.toString(), preview.toString(), recordId, createdAt));
                         }
                     }
                 })
                 .concatWith(Mono.fromSupplier(() -> {
-                    String markdown = acc.isEmpty() ? preview.toString().trim() : acc.toString().trim();
-                    persistGuideHistory(recordId, createdAt, subjectId, fileName, topicHint, markdown);
-                    return new EssayGuideStreamEvent("done", "", markdown, recordId, createdAt);
+                    String markdown = acc.toString().trim();
+                    String thinking = preview.toString().trim();
+                    return new EssayGuideStreamEvent("done", "", markdown, thinking, recordId, createdAt);
                 }))
                 .timeout(Duration.ofSeconds(Math.max(30, props.getTimeoutSeconds())))
                 .onErrorResume(e -> {
                     log.error("论文指导流式失败", e);
-                    String markdown = acc.isEmpty() ? preview.toString().trim() : acc.toString().trim();
-                    if (StringUtils.hasText(markdown)) {
-                        persistGuideHistory(recordId, createdAt, subjectId, fileName, topicHint, markdown);
-                    }
+                    String markdown = acc.toString().trim();
+                    String thinking = preview.toString().trim();
                     String msg = e.getMessage() == null ? "指导生成失败" : e.getMessage();
-                    return Flux.just(new EssayGuideStreamEvent("error", msg, markdown, recordId, createdAt));
+                    return Flux.just(new EssayGuideStreamEvent("error", msg, markdown, thinking, recordId, createdAt));
                 });
-    }
-
-    private static String extractStreamDelta(AgentEvent event) {
-        if (event instanceof TextBlockDeltaEvent textEvent) {
-            return textEvent.getDelta();
-        }
-        if (event instanceof ThinkingBlockDeltaEvent thinkingEvent) {
-            return thinkingEvent.getDelta();
-        }
-        return null;
-    }
-
-    private void persistGuideHistory(
-            String id,
-            long createdAt,
-            String subjectId,
-            String fileName,
-            String topicHint,
-            String markdown) {
-        if (!StringUtils.hasText(markdown)) {
-            return;
-        }
-        historyService.save(new EssayGuideHistoryRecord(
-                id,
-                createdAt,
-                subjectId,
-                fileName,
-                extractGuideTopic(topicHint, markdown),
-                markdown));
     }
 
     private HarnessAgent buildGuideHarness(String sysPrompt, String modelName) {
@@ -230,6 +211,7 @@ public class EssayAiService {
                 .sysPrompt(sysPrompt)
                 .model(model)
                 .workspace(harnessWorkspace)
+                .stateStore(agentStateStore)
                 .maxIters(1)
                 .generateOptions(GenerateOptions.builder().build())
                 .toolkit(new Toolkit())
@@ -445,20 +427,6 @@ public class EssayAiService {
                 nullToEmpty(req == null ? null : req.topic()),
                 nullToEmpty(req == null ? null : req.abstractText()),
                 nullToEmpty(req == null ? null : req.bodyText()));
-    }
-
-    private static String extractGuideTopic(String topicHint, String markdown) {
-        if (StringUtils.hasText(markdown)) {
-            Matcher m = Pattern.compile("^#\\s+(.+)$", Pattern.MULTILINE).matcher(markdown);
-            if (m.find() && StringUtils.hasText(m.group(1))) {
-                return m.group(1).trim();
-            }
-        }
-        if (!StringUtils.hasText(topicHint)) {
-            return "";
-        }
-        String first = topicHint.trim().lines().findFirst().orElse("").trim();
-        return first.length() > 80 ? first.substring(0, 80) : first;
     }
 
     private EssayPolishResponse parsePolish(String part, String raw, EssayPolishRequest req) {

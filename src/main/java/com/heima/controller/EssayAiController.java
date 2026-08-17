@@ -104,7 +104,7 @@ public class EssayAiController {
         return essayAiService.guideStream(request);
     }
 
-    @Operation(summary = "论文指导历史", description = "按科目与论文文件名读取 Redis 中的指导记录")
+    @Operation(summary = "论文指导历史", description = "读取 AgentScope 为该论文会话落盘的 agent_state")
     @GetMapping("/guide/history")
     public EssayGuideHistoryResponse guideHistory(
             @RequestParam(required = false, defaultValue = "") String subjectId,
