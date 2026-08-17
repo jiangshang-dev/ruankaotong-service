@@ -69,12 +69,8 @@ public class EssayAiService {
     private final AgentStateStore agentStateStore;
     private final Path harnessWorkspace;
 
-    public EssayAiService(
-            AiProperties props,
-            PromptLoader promptLoader,
-            ObjectMapper objectMapper,
-            EssayGuideHistoryService historyService,
-            AgentStateStore agentStateStore) {
+    public EssayAiService(AiProperties props, PromptLoader promptLoader,
+            ObjectMapper objectMapper, EssayGuideHistoryService historyService, AgentStateStore agentStateStore) {
         this.props = props;
         this.promptLoader = promptLoader;
         this.objectMapper = objectMapper;
@@ -142,15 +138,14 @@ public class EssayAiService {
         StringBuilder acc = new StringBuilder();
         StringBuilder preview = new StringBuilder();
 
-        HarnessAgent agent = buildGuideHarness(
-                sys, images.isEmpty() ? props.getModelName() : props.resolveVisionModelName());
+        HarnessAgent agent = buildGuideHarness(sys, images.isEmpty() ? props.getModelName() : props.resolveVisionModelName());
         RuntimeContext runtimeContext = RuntimeContext.builder()
                 .sessionId(fileName)
                 .userId(subjectId)
                 .build();
 
-        Flux<AgentEvent> xxx = agent.streamEvents(userMsg, runtimeContext);
-        return xxx.subscribeOn(Schedulers.boundedElastic())
+        Flux<AgentEvent> agentEvent = agent.streamEvents(userMsg, runtimeContext);
+        return agentEvent.subscribeOn(Schedulers.boundedElastic())
                 .<EssayGuideStreamEvent>handle((event, sink) -> {
                     if (event instanceof ThinkingBlockDeltaEvent thinkingEvent) {
                         String delta = thinkingEvent.getDelta();
