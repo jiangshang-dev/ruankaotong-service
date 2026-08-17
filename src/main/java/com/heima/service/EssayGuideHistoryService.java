@@ -36,8 +36,12 @@ public class EssayGuideHistoryService {
     }
 
     public EssayGuideHistoryResponse list(String subjectId, String fileName) {
+        return list(subjectId, fileName, "");
+    }
+
+    public EssayGuideHistoryResponse list(String subjectId, String fileName, String sessionPrefix) {
         String userId = userId(subjectId);
-        String sessionId = sessionId(fileName);
+        String sessionId = sessionId(fileName, sessionPrefix);
         List<EssayGuideHistoryRecord> records = new ArrayList<>();
         try {
             AgentState state = stateStore.get(userId, sessionId, AGENT_STATE_KEY, AgentState.class)
@@ -57,7 +61,15 @@ public class EssayGuideHistoryService {
     }
 
     static String sessionId(String fileName) {
-        return normalize(fileName, "_unsaved").replace(':', '_').replace('/', '_');
+        return sessionId(fileName, "");
+    }
+
+    static String sessionId(String fileName, String prefix) {
+        String name = normalize(fileName, "_unsaved").replace(':', '_').replace('/', '_');
+        if (!StringUtils.hasText(prefix)) {
+            return name;
+        }
+        return prefix.replace(':', '_').replace('/', '_') + "_" + name;
     }
 
     static String normalize(String value, String fallback) {

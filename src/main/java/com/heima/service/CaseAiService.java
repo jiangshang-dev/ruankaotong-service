@@ -3,28 +3,47 @@ package com.heima.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.heima.config.AiProperties;
+import com.heima.dto.CaseAiDtos.CaseExplainRequest;
 import com.heima.dto.CaseAiDtos.CaseImage;
 import com.heima.dto.CaseAiDtos.CaseQuestionAnswer;
 import com.heima.dto.CaseAiDtos.CaseScoreRequest;
 import com.heima.dto.CaseAiDtos.CaseScoreResponse;
 import com.heima.dto.CaseAiDtos.CaseSolveRequest;
 import com.heima.dto.CaseAiDtos.CaseSolveResponse;
+import com.heima.dto.EssayAiDtos.EssayGuideHistoryResponse;
+import com.heima.dto.EssayAiDtos.EssayGuideStreamEvent;
 import com.heima.dto.EssayAiDtos.ScoreDimension;
 import io.agentscope.core.ReActAgent;
+import io.agentscope.core.agent.RuntimeContext;
+import io.agentscope.core.event.AgentEvent;
+import io.agentscope.core.event.AgentResultEvent;
+import io.agentscope.core.event.TextBlockDeltaEvent;
+import io.agentscope.core.event.ThinkingBlockDeltaEvent;
 import io.agentscope.core.message.Base64Source;
 import io.agentscope.core.message.ContentBlock;
 import io.agentscope.core.message.ImageBlock;
 import io.agentscope.core.message.Msg;
 import io.agentscope.core.message.MsgRole;
 import io.agentscope.core.message.TextBlock;
+import io.agentscope.core.model.GenerateOptions;
+import io.agentscope.core.state.AgentStateStore;
+import io.agentscope.core.tool.Toolkit;
 import io.agentscope.extensions.model.openai.OpenAIChatModel;
+import io.agentscope.harness.agent.HarnessAgent;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 /**
  * 软考案例分析 AI：多模态识图解答 / 评分。每次新建 ReActAgent，无会话记忆。
@@ -38,11 +57,27 @@ public class CaseAiService {
     private final AiProperties props;
     private final PromptLoader promptLoader;
     private final ObjectMapper objectMapper;
+    private final EssayGuideHistoryService historyService;
+    private final AgentStateStore agentStateStore;
+    private final Path harnessWorkspace;
 
-    public CaseAiService(AiProperties props, PromptLoader promptLoader, ObjectMapper objectMapper) {
+    public CaseAiService(
+            AiProperties props,
+            PromptLoader promptLoader,
+            ObjectMapper objectMapper,
+            EssayGuideHistoryService historyService,
+            AgentStateStore agentStateStore) {
         this.props = props;
         this.promptLoader = promptLoader;
         this.objectMapper = objectMapper;
+        this.historyService = historyService;
+        this.agentStateStore = agentStateStore;
+        this.harnessWorkspace = Path.of(System.getProperty("java.io.tmpdir"), "ruankao-harness");
+        try {
+            Files.createDirectories(this.harnessWorkspace);
+        } catch (IOException e) {
+            throw new IllegalStateException("无法创建 HarnessAgent 工作目录: " + this.harnessWorkspace, e);
+        }
     }
 
     public CaseSolveResponse solve(CaseSolveRequest req) {
@@ -72,6 +107,140 @@ public class CaseAiService {
         log.info("用户问题：{}", user);
         String raw = callVision("ruankao-case-score", sys, user, images);
         return parseScore(raw);
+    }
+
+    public EssayGuideHistoryResponse listExplainHistory(String subjectId, String fileName) {
+        return historyService.list(subjectId, fileName, "case");
+    }
+
+    /**
+     * 案例分析讲解流式输出：HarnessAgent.streamEvents，接口直接返回 Flux。
+     */
+    public Flux<EssayGuideStreamEvent> explainStream(CaseExplainRequest req) {
+        List<CaseImage> images = normalizeImages(req == null ? null : req.images());
+        if (images.isEmpty() && (req == null || !StringUtils.hasText(req.topicText()))) {
+            throw new IllegalArgumentException("请先粘贴题目截图后再讲解");
+        }
+
+        String sys = promptLoader.load(props.getCaseExplainStreamPrompt());
+        String user = buildExplainUserPrompt(req);
+        Msg userMsg = buildUserMsg(user, images);
+
+        String recordId = UUID.randomUUID().toString().replace("-", "");
+        long createdAt = System.currentTimeMillis();
+        String subjectId = EssayGuideHistoryService.userId(req == null ? null : req.subjectId());
+        String fileName = EssayGuideHistoryService.sessionId(
+                req == null ? null : req.fileName(), "case");
+        StringBuilder acc = new StringBuilder();
+        StringBuilder preview = new StringBuilder();
+
+        HarnessAgent agent = buildExplainHarness(
+                sys, images.isEmpty() ? props.getModelName() : props.resolveVisionModelName());
+        RuntimeContext runtimeContext = RuntimeContext.builder()
+                .sessionId(fileName)
+                .userId(subjectId)
+                .build();
+
+        Flux<AgentEvent> events = agent.streamEvents(userMsg, runtimeContext);
+        return events.subscribeOn(Schedulers.boundedElastic())
+                .<EssayGuideStreamEvent>handle((event, sink) -> {
+                    if (event instanceof ThinkingBlockDeltaEvent thinkingEvent) {
+                        String delta = thinkingEvent.getDelta();
+                        if (!StringUtils.hasText(delta)) {
+                            return;
+                        }
+                        preview.append(delta);
+                        sink.next(new EssayGuideStreamEvent(
+                                "think_delta", delta, acc.toString(), preview.toString(), recordId, createdAt));
+                        return;
+                    }
+                    if (event instanceof TextBlockDeltaEvent textEvent) {
+                        String delta = textEvent.getDelta();
+                        if (!StringUtils.hasText(delta)) {
+                            return;
+                        }
+                        acc.append(delta);
+                        sink.next(new EssayGuideStreamEvent(
+                                "delta", delta, acc.toString(), preview.toString(), recordId, createdAt));
+                        return;
+                    }
+                    if (event instanceof AgentResultEvent resultEvent && acc.isEmpty()) {
+                        String text = resultEvent.getResult() != null
+                                ? resultEvent.getResult().getTextContent()
+                                : null;
+                        if (StringUtils.hasText(text)) {
+                            acc.append(text);
+                            sink.next(new EssayGuideStreamEvent(
+                                    "delta", text, acc.toString(), preview.toString(), recordId, createdAt));
+                        }
+                    }
+                })
+                .concatWith(Mono.fromSupplier(() -> {
+                    String markdown = acc.toString().trim();
+                    String thinking = preview.toString().trim();
+                    return new EssayGuideStreamEvent("done", "", markdown, thinking, recordId, createdAt);
+                }))
+                .timeout(Duration.ofSeconds(Math.max(30, props.getTimeoutSeconds())))
+                .onErrorResume(e -> {
+                    log.error("案例分析讲解流式失败", e);
+                    String markdown = acc.toString().trim();
+                    String thinking = preview.toString().trim();
+                    String msg = e.getMessage() == null ? "讲解生成失败" : e.getMessage();
+                    return Flux.just(new EssayGuideStreamEvent("error", msg, markdown, thinking, recordId, createdAt));
+                });
+    }
+
+    private HarnessAgent buildExplainHarness(String sysPrompt, String modelName) {
+        OpenAIChatModel model = OpenAIChatModel.builder()
+                .apiKey(props.getApiKey())
+                .baseUrl(props.getBaseUrl())
+                .modelName(modelName)
+                .stream(true)
+                .build();
+
+        return HarnessAgent.builder()
+                .name("ruankao-case-explain")
+                .sysPrompt(sysPrompt)
+                .model(model)
+                .workspace(harnessWorkspace)
+                .stateStore(agentStateStore)
+                .maxIters(1)
+                .generateOptions(GenerateOptions.builder().build())
+                .toolkit(new Toolkit())
+                .disableFilesystemTools()
+                .disableShellTool()
+                .disableWorkspaceContext()
+                .disableMemoryTools()
+                .disableMemoryHooks()
+                .disableSubagents()
+                .disableDynamicSubagents()
+                .disableToolsConfig()
+                .disableDynamicSkills()
+                .disableDefaultWorkspaceSkills()
+                .disableCompaction()
+                .disableToolResultEviction()
+                .disableAtPathExpansion()
+                .skillsEnabled(false)
+                .build();
+    }
+
+    private static String buildExplainUserPrompt(CaseExplainRequest req) {
+        return """
+                科目：%s
+                标题：%s
+
+                题目区附加文字（截图之外，可空）：
+                %s
+
+                考生当前作答（可空，仅作对照，不要当成必须润色的对象）：
+                %s
+
+                上面同时附上了题目截图。请识读全部图片中的试题，按系统要求用 Markdown 流式输出解题技巧讲解与参考答案。
+                """.formatted(
+                nullToEmpty(req == null ? null : req.subject()),
+                nullToEmpty(req == null ? null : req.title()),
+                nullToEmpty(req == null ? null : req.topicText()),
+                nullToEmpty(req == null ? null : req.answerText()));
     }
 
     private String callVision(String agentName, String sysPrompt, String userText, List<CaseImage> images) {

@@ -1,5 +1,5 @@
 server:
-  port: ${SERVER_PORT:9001}
+  port: ${SERVER_PORT:9002}
   tomcat:
     max-http-form-post-size: 30MB
     max-swallow-size: 30MB
@@ -37,6 +37,7 @@ ruankao:
     score-prompt: classpath:prompts/ruankao-score-system.txt
     case-solve-prompt: classpath:prompts/ruankao-case-solve-system.txt
     case-score-prompt: classpath:prompts/ruankao-case-score-system.txt
+    case-explain-stream-prompt: classpath:prompts/ruankao-case-explain-stream-system.txt
     guide-prompt: classpath:prompts/ruankao-essay-guide-system.txt
     guide-stream-prompt: classpath:prompts/ruankao-essay-guide-stream-system.txt
     # 案例分析识图模型；留空则使用 model-name。主模型不支持图片时改为 qwen-vl-max / qwen3-vl-plus 等

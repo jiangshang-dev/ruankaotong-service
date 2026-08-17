@@ -31,6 +31,25 @@ public final class CaseAiDtos {
     ) {
     }
 
+    @Schema(description = "案例分析 AI 讲解请求（流式）")
+    public record CaseExplainRequest(
+            @Schema(description = "考试科目", example = "系统架构设计师")
+            String subject,
+            @Schema(description = "考生自拟标题，可空")
+            String title,
+            @Schema(description = "题目区附加文字（图片之外的说明）")
+            String topicText,
+            @Schema(description = "考生当前作答，可空，仅作对照")
+            String answerText,
+            @Schema(description = "题目截图，可空（无图时需有题目文字）")
+            List<CaseImage> images,
+            @Schema(description = "科目 ID，作为 AgentScope userId", example = "architect")
+            String subjectId,
+            @Schema(description = "案例文件名，作为 AgentScope sessionId；未保存可用草稿 key")
+            String fileName
+    ) {
+    }
+
     @Schema(description = "单问参考答案")
     public record CaseQuestionAnswer(
             @Schema(description = "题号", example = "问题1")

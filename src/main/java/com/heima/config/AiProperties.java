@@ -13,6 +13,7 @@ public class AiProperties {
     private String scorePrompt = "classpath:prompts/ruankao-score-system.txt";
     private String caseSolvePrompt = "classpath:prompts/ruankao-case-solve-system.txt";
     private String caseScorePrompt = "classpath:prompts/ruankao-case-score-system.txt";
+    private String caseExplainStreamPrompt = "classpath:prompts/ruankao-case-explain-stream-system.txt";
     private String guidePrompt = "classpath:prompts/ruankao-essay-guide-system.txt";
     private String guideStreamPrompt = "classpath:prompts/ruankao-essay-guide-stream-system.txt";
     /** 多模态识图模型；为空则回退到 modelName */
@@ -81,6 +82,14 @@ public class AiProperties {
 
     public void setCaseScorePrompt(String caseScorePrompt) {
         this.caseScorePrompt = caseScorePrompt;
+    }
+
+    public String getCaseExplainStreamPrompt() {
+        return caseExplainStreamPrompt;
+    }
+
+    public void setCaseExplainStreamPrompt(String caseExplainStreamPrompt) {
+        this.caseExplainStreamPrompt = caseExplainStreamPrompt;
     }
 
     public String getGuidePrompt() {
