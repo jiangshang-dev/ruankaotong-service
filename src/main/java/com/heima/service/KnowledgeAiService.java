@@ -22,6 +22,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.UUID;
+
+import io.agentscope.harness.agent.memory.MemoryConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -146,12 +148,19 @@ public class KnowledgeAiService {
                 .stream(true)
                 .build();
 
+        MemoryConfig.FlushTrigger flushTrigger = MemoryConfig.FlushTrigger.throttled(Duration.ofMinutes(10));
+        MemoryConfig memoryConfig = MemoryConfig.builder()
+                .flushTrigger(flushTrigger)
+                .consolidationMinGap(Duration.ofMinutes(50))
+                .build();
+
         return HarnessAgent.builder()
                 .name("ruankao-knowledge-tutor")
                 .sysPrompt(sysPrompt)
                 .model(model)
                 .workspace(harnessWorkspace)
                 .stateStore(agentStateStore)
+                .memory(memoryConfig)
                 .maxIters(1)
                 .generateOptions(GenerateOptions.builder().build())
                 .toolkit(new Toolkit())
