@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>问答详情 · 软考通管理后台</title>
+  <link rel="stylesheet" href="./css/admin.css">
+</head>
+<body>
+  <div id="app">
+    <div id="page" data-nav="qa" data-title="问答详情">
+      <div class="card" id="detail">加载中…</div>
+    </div>
+  </div>
+  <script src="./js/mock.js"></script>
+  <script src="./js/common.js"></script>
+  <script>
+    document.addEventListener("admin:ready", () => {
+      const row = MOCK.qa.find((item) => item.id === Admin.qs("id"));
+      const box = document.getElementById("detail");
+      if (!row) {
+        box.innerHTML = `<p class="note">找不到这条记录。</p><a class="btn ghost" href="./qa.html">返回列表</a>`;
+        return;
+      }
+      box.innerHTML = `
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px">
+          <h3 style="margin:0">${Admin.esc(row.action)}</h3>
+          <a class="btn ghost sm" href="./qa.html?ip=${encodeURIComponent(row.clientIp)}">返回该 IP 的问答</a>
+        </div>
+        <div class="meta-grid">
+          <div><b>客户端 IP</b><span class="ip">${Admin.esc(row.clientIp)}</span></div>
+          <div><b>时间</b>${Admin.esc(row.createdAt)}</div>
+          <div><b>模块</b>${Admin.esc(row.module)}</div>
+          <div><b>学科</b>${Admin.esc(row.subject)}</div>
+          <div><b>文件</b>${Admin.esc(row.fileName)}</div>
+          <div><b>主题</b>${Admin.esc(row.topic)}</div>
+        </div>
+        <div class="qa-block">
+          <h4>用户问题</h4>
+          <p>${Admin.esc(row.question)}</p>
+          <h4>AI 回答</h4>
+          <p>${Admin.esc(row.answer)}</p>
+        </div>
+      `;
+    });
+  </script>
+</body>
+</html>

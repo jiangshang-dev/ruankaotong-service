@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>客户端 IP · 软考通管理后台</title>
+  <link rel="stylesheet" href="./css/admin.css">
+</head>
+<body>
+  <div id="app">
+    <div id="page" data-nav="clients" data-title="客户端 IP">
+      <p class="note">桌面端不登录。每次 AI 请求记录来源 IP，用 IP 区分考生机器。</p>
+      <div class="card">
+        <div class="toolbar">
+          <input id="q" placeholder="搜索 IP">
+          <button class="btn ghost" type="button" id="search">筛选</button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>客户端 IP</th>
+              <th>最近访问</th>
+              <th>问答次数</th>
+              <th>用过的模块</th>
+              <th>最近科目</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <script src="./js/mock.js"></script>
+  <script src="./js/common.js"></script>
+  <script>
+    function renderList() {
+      const q = (document.getElementById("q").value || "").trim();
+      const rows = MOCK.clients.filter((c) => !q || c.ip.includes(q));
+      document.getElementById("rows").innerHTML = rows.map((c) => `
+        <tr>
+          <td class="ip">${Admin.esc(c.ip)}</td>
+          <td>${Admin.esc(c.lastSeen)}</td>
+          <td>${c.count}</td>
+          <td>${c.modules.map((m) => `<span class="badge info">${Admin.esc(m)}</span>`).join(" ")}</td>
+          <td>${Admin.esc(c.subject)}</td>
+          <td><a class="btn ghost sm" href="./qa.html?ip=${encodeURIComponent(c.ip)}">查看问答</a></td>
+        </tr>
+      `).join("");
+    }
+    document.addEventListener("admin:ready", () => {
+      renderList();
+      document.getElementById("search").onclick = renderList;
+      document.getElementById("q").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") renderList();
+      });
+    });
+  </script>
+</body>
+</html>

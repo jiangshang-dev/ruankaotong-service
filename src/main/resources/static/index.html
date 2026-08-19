@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>概览 · 软考通管理后台</title>
+  <link rel="stylesheet" href="./css/admin.css">
+</head>
+<body>
+  <div id="app">
+    <div id="page" data-nav="dashboard" data-title="概览">
+      <div class="kpis">
+        <div class="kpi">
+          <div class="label">今日问答</div>
+          <div class="value" id="kpi-today">0</div>
+          <div class="sub">客户端 IP 调用次数</div>
+        </div>
+        <div class="kpi">
+          <div class="label">累计问答</div>
+          <div class="value" id="kpi-total">0</div>
+          <div class="sub">知识点 / 论文 / 案例</div>
+        </div>
+        <div class="kpi">
+          <div class="label">客户端 IP</div>
+          <div class="value" id="kpi-ips">0</div>
+          <div class="sub">今日活跃 <span id="kpi-ips-today">0</span></div>
+        </div>
+        <div class="kpi">
+          <div class="label">学科</div>
+          <div class="value" id="kpi-subjects">0</div>
+          <div class="sub">已启用科目</div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h3>最近问答</h3>
+          <table>
+            <thead>
+              <tr><th>时间</th><th>客户端 IP</th><th>模块</th><th>问题</th></tr>
+            </thead>
+            <tbody id="recent-qa"></tbody>
+          </table>
+        </div>
+        <div class="card">
+          <h3>活跃客户端</h3>
+          <table>
+            <thead>
+              <tr><th>IP</th><th>最近访问</th><th>问答数</th></tr>
+            </thead>
+            <tbody id="recent-ip"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="./js/mock.js"></script>
+  <script src="./js/common.js"></script>
+  <script>
+    document.addEventListener("admin:ready", () => {
+      document.getElementById("kpi-today").textContent = MOCK.stats.qaToday;
+      document.getElementById("kpi-total").textContent = MOCK.stats.qaTotal;
+      document.getElementById("kpi-ips").textContent = MOCK.stats.ips;
+      document.getElementById("kpi-ips-today").textContent = MOCK.stats.ipsToday;
+      document.getElementById("kpi-subjects").textContent = MOCK.subjects.filter((s) => s.enabled).length;
+      document.getElementById("recent-qa").innerHTML = MOCK.qa.slice(0, 5).map((row) => `
+        <tr>
+          <td>${Admin.esc(row.createdAt.slice(11))}</td>
+          <td><a class="ip" href="./qa.html?ip=${encodeURIComponent(row.clientIp)}">${Admin.esc(row.clientIp)}</a></td>
+          <td><span class="badge info">${Admin.esc(row.module)}</span></td>
+          <td><a href="./qa-detail.html?id=${encodeURIComponent(row.id)}">${Admin.esc(row.question)}</a></td>
+        </tr>
+      `).join("");
+      document.getElementById("recent-ip").innerHTML = MOCK.clients.slice(0, 5).map((row) => `
+        <tr>
+          <td><a class="ip" href="./qa.html?ip=${encodeURIComponent(row.ip)}">${Admin.esc(row.ip)}</a></td>
+          <td>${Admin.esc(row.lastSeen)}</td>
+          <td>${row.count}</td>
+        </tr>
+      `).join("");
+    });
+  </script>
+</body>
+</html>

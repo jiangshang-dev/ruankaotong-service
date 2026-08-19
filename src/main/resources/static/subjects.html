@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>学科管理 · 软考通管理后台</title>
+  <link rel="stylesheet" href="./css/admin.css">
+</head>
+<body>
+  <div id="app">
+    <div id="page" data-nav="subjects" data-title="学科管理">
+      <p class="note">对应桌面端左侧「学科」列表。启用后客户端可选；保存暂不写后端。</p>
+      <div class="card">
+        <div class="toolbar">
+          <button class="btn" type="button" id="add">新增学科</button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>名称</th>
+              <th>简称</th>
+              <th>级别</th>
+              <th>状态</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <script src="./js/mock.js"></script>
+  <script src="./js/common.js"></script>
+  <script>
+    function renderList() {
+      document.getElementById("rows").innerHTML = MOCK.subjects.map((s) => `
+        <tr>
+          <td><code class="path">${Admin.esc(s.id)}</code></td>
+          <td>${Admin.esc(s.name)}</td>
+          <td>${Admin.esc(s.shortName)}</td>
+          <td><span class="badge ${s.level === "高级" ? "ok" : s.level === "中级" ? "info" : "muted"}">${Admin.esc(s.level)}</span></td>
+          <td>${s.enabled ? '<span class="badge ok">启用</span>' : '<span class="badge muted">停用</span>'}</td>
+          <td>
+            <button class="btn ghost sm toggle" data-id="${Admin.esc(s.id)}" type="button">${s.enabled ? "停用" : "启用"}</button>
+          </td>
+        </tr>
+      `).join("");
+    }
+    document.addEventListener("admin:ready", () => {
+      renderList();
+      document.getElementById("rows").addEventListener("click", (e) => {
+        const btn = e.target.closest(".toggle");
+        if (!btn) return;
+        const item = MOCK.subjects.find((s) => s.id === btn.dataset.id);
+        if (item) item.enabled = !item.enabled;
+        Admin.toast("仅页面切换，未写入后端");
+        renderList();
+      });
+      document.getElementById("add").onclick = () => Admin.toast("新增学科尚未接入后端");
+    });
+  </script>
+</body>
+</html>

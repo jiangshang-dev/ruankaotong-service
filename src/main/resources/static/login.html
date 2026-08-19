@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>登录 · 软考通管理后台</title>
+  <link rel="stylesheet" href="./css/admin.css">
+</head>
+<body>
+  <div id="app">
+    <div class="login-wrap">
+      <form class="login-card" id="login-form">
+        <div class="login-mark">软</div>
+        <h1>软考通管理后台</h1>
+        <p>仅管理员需要登录。桌面客户端不登录，只记录 IP。</p>
+        <div class="field">
+          <label>账号</label>
+          <input name="account" value="admin" autocomplete="username">
+        </div>
+        <div class="field">
+          <label>密码</label>
+          <input name="password" type="password" value="admin123" autocomplete="current-password">
+        </div>
+        <button class="btn block" type="submit">登录</button>
+        <div class="hint">演示账号 admin / admin123</div>
+      </form>
+    </div>
+  </div>
+  <div id="toast" class="toast" hidden></div>
+  <script src="./js/mock.js"></script>
+  <script src="./js/common.js"></script>
+  <script>
+    document.getElementById("login-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.currentTarget);
+      const account = String(fd.get("account") || "").trim();
+      const password = String(fd.get("password") || "").trim();
+      if (account !== MOCK.admin.account || password !== MOCK.admin.password) {
+        Admin.toast("账号或密码不对");
+        return;
+      }
+      Admin.login(account, MOCK.admin.name);
+      location.href = "./index.html";
+    });
+  </script>
+</body>
+</html>

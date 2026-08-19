@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI 问答 · 软考通管理后台</title>
+  <link rel="stylesheet" href="./css/admin.css">
+</head>
+<body>
+  <div id="app">
+    <div id="page" data-nav="qa" data-title="AI 问答">
+      <p class="note">对应桌面端三个入口：知识点笔记辅导、论文练习、案例分析。每条记录带来源 IP，不绑定账号。</p>
+      <div class="card">
+        <div class="toolbar">
+          <input id="ip" placeholder="客户端 IP">
+          <select id="module">
+            <option value="">全部模块</option>
+            <option value="知识点">知识点笔记</option>
+            <option value="论文">论文练习</option>
+            <option value="案例">案例分析</option>
+          </select>
+          <select id="subject">
+            <option value="">全部学科</option>
+          </select>
+          <input id="kw" placeholder="问题 / 文件名">
+          <button class="btn ghost" type="button" id="search">筛选</button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>时间</th>
+              <th>客户端 IP</th>
+              <th>模块</th>
+              <th>动作</th>
+              <th>学科</th>
+              <th>文件 / 题目</th>
+              <th>问题</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+        <div class="pager" id="pager"></div>
+      </div>
+    </div>
+  </div>
+  <script src="./js/mock.js"></script>
+  <script src="./js/common.js"></script>
+  <script>
+    function renderList() {
+      const ip = document.getElementById("ip").value.trim();
+      const module = document.getElementById("module").value;
+      const subject = document.getElementById("subject").value;
+      const kw = document.getElementById("kw").value.trim();
+      const rows = MOCK.qa.filter((row) => {
+        if (ip && !row.clientIp.includes(ip)) return false;
+        if (module && row.module !== module) return false;
+        if (subject && row.subject !== subject) return false;
+        if (kw && !(row.question.includes(kw) || row.fileName.includes(kw) || row.topic.includes(kw))) return false;
+        return true;
+      });
+      document.getElementById("rows").innerHTML = rows.map((row) => `
+        <tr>
+          <td>${Admin.esc(row.createdAt)}</td>
+          <td class="ip">${Admin.esc(row.clientIp)}</td>
+          <td><span class="badge info">${Admin.esc(row.module)}</span></td>
+          <td>${Admin.esc(row.action)}</td>
+          <td>${Admin.esc(row.subject)}</td>
+          <td>
+            <div>${Admin.esc(row.fileName)}</div>
+            <small style="color:var(--muted)">${Admin.esc(row.topic)}</small>
+          </td>
+          <td>${Admin.esc(row.question)}</td>
+          <td><a class="btn ghost sm" href="./qa-detail.html?id=${encodeURIComponent(row.id)}">详情</a></td>
+        </tr>
+      `).join("") || `<tr><td colspan="8">没有匹配的记录</td></tr>`;
+      document.getElementById("pager").textContent = `共 ${rows.length} 条（示例数据）`;
+    }
+    document.addEventListener("admin:ready", () => {
+      const subjectSel = document.getElementById("subject");
+      MOCK.subjects.forEach((s) => {
+        const opt = document.createElement("option");
+        opt.value = s.name;
+        opt.textContent = s.name;
+        subjectSel.appendChild(opt);
+      });
+      const presetIp = Admin.qs("ip");
+      if (presetIp) document.getElementById("ip").value = presetIp;
+      renderList();
+      document.getElementById("search").onclick = renderList;
+      ["ip", "kw"].forEach((id) => {
+        document.getElementById(id).addEventListener("keydown", (e) => {
+          if (e.key === "Enter") renderList();
+        });
+      });
+      ["module", "subject"].forEach((id) => {
+        document.getElementById(id).addEventListener("change", renderList);
+      });
+    });
+  </script>
+</body>
+</html>

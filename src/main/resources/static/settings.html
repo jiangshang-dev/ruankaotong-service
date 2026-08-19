@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>系统设置 · 软考通管理后台</title>
+  <link rel="stylesheet" href="./css/admin.css">
+</head>
+<body>
+  <div id="app">
+    <div id="page" data-nav="settings" data-title="系统设置">
+      <div class="grid-2">
+        <div class="card">
+          <h3>管理员登录</h3>
+          <p class="note">只有管理后台要登录。改密暂不生效。</p>
+          <form id="admin-form">
+            <div class="field">
+              <label>当前账号</label>
+              <input value="admin" disabled>
+            </div>
+            <div class="field">
+              <label>新密码</label>
+              <input name="password" type="password" placeholder="至少 6 位">
+            </div>
+            <div class="field">
+              <label>确认新密码</label>
+              <input name="confirm" type="password">
+            </div>
+            <button class="btn" type="submit">保存</button>
+          </form>
+        </div>
+        <div class="card">
+          <h3>客户端规则</h3>
+          <p class="note">桌面端（知识点笔记 / 论文练习 / 案例分析）不要求考生登录。</p>
+          <table>
+            <tbody>
+              <tr><th>身份</th><td>不登录，只记客户端 IP</td></tr>
+              <tr><th>记录内容</th><td>IP、学科、文件、问题、AI 回答、时间</td></tr>
+              <tr><th>会话</th><td>仍可按科目 + 文件名读 Redis 历史</td></tr>
+              <tr><th>管理端</th><td>必须登录后才能看问答和配置</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="./js/mock.js"></script>
+  <script src="./js/common.js"></script>
+  <script>
+    document.addEventListener("admin:ready", () => {
+      document.getElementById("admin-form").addEventListener("submit", (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.currentTarget);
+        const password = String(fd.get("password") || "");
+        const confirm = String(fd.get("confirm") || "");
+        if (password.length < 6) {
+          Admin.toast("新密码至少 6 位");
+          return;
+        }
+        if (password !== confirm) {
+          Admin.toast("两次密码不一致");
+          return;
+        }
+        Admin.toast("密码未写入后端，仅页面演示");
+      });
+    });
+  </script>
+</body>
+</html>
