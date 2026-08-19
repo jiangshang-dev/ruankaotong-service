@@ -4,7 +4,6 @@ import com.heima.config.AiProperties;
 import com.heima.dto.EssayAiDtos.EssayGuideHistoryResponse;
 import com.heima.dto.EssayAiDtos.EssayGuideStreamEvent;
 import com.heima.dto.KnowledgeAiDtos.KnowledgeTutorRequest;
-import io.agentscope.core.ReActAgent;
 import io.agentscope.core.agent.RuntimeContext;
 import io.agentscope.core.event.AgentEvent;
 import io.agentscope.core.event.AgentResultEvent;
@@ -46,17 +45,24 @@ public class KnowledgeAiService {
     private final PromptLoader promptLoader;
     private final EssayGuideHistoryService historyService;
     private final AgentStateStore agentStateStore;
+    private final KnowledgeDocCatalog knowledgeDocCatalog;
+    /**
+     * AgentScope Harness 运行时沙箱，不是讲义目录。
+     * 用系统临时目录，换电脑/服务器都能写；讲义请走 classpath:docs。
+     */
     private final Path harnessWorkspace;
 
     public KnowledgeAiService(
             AiProperties props,
             PromptLoader promptLoader,
             EssayGuideHistoryService historyService,
-            AgentStateStore agentStateStore) {
+            AgentStateStore agentStateStore,
+            KnowledgeDocCatalog knowledgeDocCatalog) {
         this.props = props;
         this.promptLoader = promptLoader;
         this.historyService = historyService;
         this.agentStateStore = agentStateStore;
+        this.knowledgeDocCatalog = knowledgeDocCatalog;
         this.harnessWorkspace = Path.of(System.getProperty("java.io.tmpdir"), "ruankao-harness");
         try {
             Files.createDirectories(this.harnessWorkspace);
@@ -66,7 +72,7 @@ public class KnowledgeAiService {
     }
 
     public EssayGuideHistoryResponse listTutorHistory(String subjectId, String fileName) {
-        return historyService.list(subjectId, fileName, SESSION_PREFIX);
+        return historyService.list(subjectId, fileName, SESSION_PREFIX, true);
     }
 
     /**
@@ -181,11 +187,13 @@ public class KnowledgeAiService {
                 .build();
     }
 
-    static String buildTutorUserPrompt(KnowledgeTutorRequest req) {
+    private String buildTutorUserPrompt(KnowledgeTutorRequest req) {
+        String docs = knowledgeDocCatalog.promptBlock(req.title(), req.question());
         boolean followUp = Boolean.TRUE.equals(req.followUp()) && StringUtils.hasText(req.question());
         if (followUp) {
             StringBuilder sb = new StringBuilder();
             sb.append("【连续追问】结合此前本会话讲解继续回答，不要无故重写整篇辅导。\n\n");
+            sb.append(docs).append("\n\n");
             sb.append("当前笔记标题（可能已改，仅参考）：\n");
             sb.append(emptyAsDash(req.title())).append("\n\n");
             sb.append("当前笔记正文摘录（可能已改，仅参考）：\n");
@@ -197,6 +205,7 @@ public class KnowledgeAiService {
         StringBuilder sb = new StringBuilder();
         sb.append("科目：").append(emptyAsDash(req.subject())).append('\n');
         sb.append("笔记标题：").append(emptyAsDash(req.title())).append("\n\n");
+        sb.append(docs).append("\n\n");
         sb.append("笔记正文（考生当前知识点笔记，可空）：\n");
         sb.append(clip(req.noteText(), MAX_NOTE_CHARS)).append("\n\n");
         if (StringUtils.hasText(req.question())) {

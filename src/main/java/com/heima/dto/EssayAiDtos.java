@@ -136,7 +136,9 @@ public final class EssayAiDtos {
             String fileName,
             String topic,
             String markdown,
-            String thinking
+            String thinking,
+            @Schema(description = "user 或 assistant，默认 assistant")
+            String role
     ) {
     }
 

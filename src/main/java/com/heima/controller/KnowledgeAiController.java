@@ -38,16 +38,11 @@ public class KnowledgeAiController {
             description = "按当前笔记讲解并可连续追问。直接返回 Flux；禁止 SseEmitter。"
     )
     @PostMapping(value = "/tutor/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<EssayGuideStreamEvent> tutorStream(@RequestBody KnowledgeTutorRequest request, HttpServletResponse response) {
+    public Flux<EssayGuideStreamEvent> tutorStream(
+            @RequestBody KnowledgeTutorRequest request, HttpServletResponse response) {
         response.setHeader(HttpHeaders.CACHE_CONTROL, "no-cache");
         response.setHeader("X-Accel-Buffering", "no");
         return knowledgeAiService.tutorStream(request);
-    }
-
-    @PostMapping("/stop")
-    public String stop() {
-        knowledgeAiService.stop();
-        return "stop";
     }
 
     @Operation(summary = "综合知识辅导历史", description = "读取 AgentScope 为该笔记会话落盘的 agent_state")

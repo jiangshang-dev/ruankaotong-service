@@ -40,6 +40,11 @@ public class EssayGuideHistoryService {
     }
 
     public EssayGuideHistoryResponse list(String subjectId, String fileName, String sessionPrefix) {
+        return list(subjectId, fileName, sessionPrefix, false);
+    }
+
+    public EssayGuideHistoryResponse list(
+            String subjectId, String fileName, String sessionPrefix, boolean includeUser) {
         String userId = userId(subjectId);
         String sessionId = sessionId(fileName, sessionPrefix);
         List<EssayGuideHistoryRecord> records = new ArrayList<>();
@@ -47,7 +52,7 @@ public class EssayGuideHistoryService {
             AgentState state = stateStore.get(userId, sessionId, AGENT_STATE_KEY, AgentState.class)
                     .orElse(null);
             if (state != null && state.getContext() != null) {
-                records.addAll(fromContext(userId, sessionId, state.getContext()));
+                records.addAll(fromContext(userId, sessionId, state.getContext(), includeUser));
             }
         } catch (Exception e) {
             log.warn("读取论文指导 agent_state 失败 userId={} sessionId={}", userId, sessionId, e);
@@ -77,25 +82,45 @@ public class EssayGuideHistoryService {
     }
 
     private static List<EssayGuideHistoryRecord> fromContext(
-            String subjectId, String fileName, List<Msg> context) {
+            String subjectId, String fileName, List<Msg> context, boolean includeUser) {
         List<EssayGuideHistoryRecord> records = new ArrayList<>();
         for (Msg msg : context) {
-            if (msg == null || msg.getRole() != MsgRole.ASSISTANT) {
+            if (msg == null) {
                 continue;
             }
-            String markdown = textOf(msg);
-            String thinking = thinkingOf(msg);
-            if (!StringUtils.hasText(markdown) && !StringUtils.hasText(thinking)) {
+            if (msg.getRole() == MsgRole.ASSISTANT) {
+                String markdown = textOf(msg);
+                String thinking = thinkingOf(msg);
+                if (!StringUtils.hasText(markdown) && !StringUtils.hasText(thinking)) {
+                    continue;
+                }
+                records.add(new EssayGuideHistoryRecord(
+                        StringUtils.hasText(msg.getId()) ? msg.getId() : String.valueOf(records.size()),
+                        parseTimestamp(msg.getTimestamp()),
+                        subjectId,
+                        fileName,
+                        headingOf(markdown),
+                        markdown,
+                        thinking,
+                        "assistant"));
                 continue;
             }
-            records.add(new EssayGuideHistoryRecord(
-                    StringUtils.hasText(msg.getId()) ? msg.getId() : String.valueOf(records.size()),
-                    parseTimestamp(msg.getTimestamp()),
-                    subjectId,
-                    fileName,
-                    headingOf(markdown),
-                    markdown,
-                    thinking));
+            if (includeUser && msg.getRole() == MsgRole.USER) {
+                String markdown = textOf(msg);
+                if (!StringUtils.hasText(markdown)) {
+                    continue;
+                }
+                String question = userQuestionOf(markdown);
+                records.add(new EssayGuideHistoryRecord(
+                        StringUtils.hasText(msg.getId()) ? msg.getId() : String.valueOf(records.size()),
+                        parseTimestamp(msg.getTimestamp()),
+                        subjectId,
+                        fileName,
+                        headingOf(question),
+                        question,
+                        "",
+                        "user"));
+            }
         }
         return records;
     }
@@ -132,8 +157,32 @@ public class EssayGuideHistoryService {
             if (trimmed.startsWith("# ")) {
                 return trimmed.substring(2).trim();
             }
+            if (!trimmed.isEmpty()) {
+                return trimmed.length() > 36 ? trimmed.substring(0, 36) + "…" : trimmed;
+            }
         }
         return "";
+    }
+
+    static String userQuestionOf(String raw) {
+        if (!StringUtils.hasText(raw)) {
+            return "";
+        }
+        String text = raw.trim();
+        int ask = text.lastIndexOf("追问：");
+        if (ask >= 0) {
+            return text.substring(ask + 3).trim();
+        }
+        int req = text.indexOf("考生本次要求：");
+        if (req >= 0) {
+            String rest = text.substring(req + 7).trim();
+            int cut = rest.indexOf("\n\n请按系统要求");
+            if (cut >= 0) {
+                rest = rest.substring(0, cut).trim();
+            }
+            return rest;
+        }
+        return text.length() > 200 ? text.substring(0, 200) + "…" : text;
     }
 
     private static long parseTimestamp(String timestamp) {

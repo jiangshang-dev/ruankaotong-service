@@ -17,6 +17,8 @@ public class AiProperties {
     private String guidePrompt = "classpath:prompts/ruankao-essay-guide-system.txt";
     private String guideStreamPrompt = "classpath:prompts/ruankao-essay-guide-stream-system.txt";
     private String knowledgeTutorStreamPrompt = "classpath:prompts/ruankao-knowledge-tutor-stream-system.txt";
+    /** 综合知识讲义目录，必须用 classpath，保证打包进 JAR 后换机器仍可用 */
+    private String knowledgeDocs = "classpath:docs";
     /** 多模态识图模型；为空则回退到 modelName */
     private String visionModelName = "";
     private int timeoutSeconds = 180;
@@ -115,6 +117,14 @@ public class AiProperties {
 
     public void setKnowledgeTutorStreamPrompt(String knowledgeTutorStreamPrompt) {
         this.knowledgeTutorStreamPrompt = knowledgeTutorStreamPrompt;
+    }
+
+    public String getKnowledgeDocs() {
+        return knowledgeDocs;
+    }
+
+    public void setKnowledgeDocs(String knowledgeDocs) {
+        this.knowledgeDocs = knowledgeDocs;
     }
 
     public String getVisionModelName() {
