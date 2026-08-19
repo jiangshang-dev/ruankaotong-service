@@ -40,6 +40,7 @@ ruankao:
     case-explain-stream-prompt: classpath:prompts/ruankao-case-explain-stream-system.txt
     guide-prompt: classpath:prompts/ruankao-essay-guide-system.txt
     guide-stream-prompt: classpath:prompts/ruankao-essay-guide-stream-system.txt
+    knowledge-tutor-stream-prompt: classpath:prompts/ruankao-knowledge-tutor-stream-system.txt
     # 案例分析识图模型；留空则使用 model-name。主模型不支持图片时改为 qwen-vl-max / qwen3-vl-plus 等
     vision-model-name: ${LLM_VISION_MODEL_NAME:}
     # 单次请求超时（秒）
