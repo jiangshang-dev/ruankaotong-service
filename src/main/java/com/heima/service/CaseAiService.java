@@ -129,8 +129,7 @@ public class CaseAiService {
         String recordId = UUID.randomUUID().toString().replace("-", "");
         long createdAt = System.currentTimeMillis();
         String subjectId = EssayGuideHistoryService.userId(req == null ? null : req.subjectId());
-        String fileName = EssayGuideHistoryService.sessionId(
-                req == null ? null : req.fileName(), "case");
+        String fileName = EssayGuideHistoryService.sessionId(req == null ? null : req.fileName(), "case");
         StringBuilder acc = new StringBuilder();
         StringBuilder preview = new StringBuilder();
 
