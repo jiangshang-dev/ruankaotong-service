@@ -7,12 +7,23 @@ server:
 spring:
   application:
     name: ruankao-back
+  datasource:
+    url: jdbc:mysql://${MYSQL_HOST:rm-2zewdohwf3z10y6ru6o.mysql.rds.aliyuncs.com}:3306/${MYSQL_DB:ruankao}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=true&allowPublicKeyRetrieval=true
+    username: ${MYSQL_USER:jeecg}
+    password: ${MYSQL_PASSWORD:Ling@7ujm}
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
   main:
     web-application-type: servlet
   servlet:
     multipart:
       max-file-size: 30MB
       max-request-size: 30MB
+  jackson:
+    time-zone: Asia/Shanghai
+    serialization:
+      write-dates-as-timestamps: false
   mvc:
     async:
       request-timeout: 240000
@@ -47,6 +58,22 @@ ruankao:
     vision-model-name: ${LLM_VISION_MODEL_NAME:}
     # 单次请求超时（秒）
     timeout-seconds: ${LLM_TIMEOUT_SECONDS:180}
+  mail:
+    host: ${MAIL_HOST:smtp.163.com}
+    port: ${MAIL_PORT:465}
+    auth: true
+    ssl-enable: true
+    from: ${MAIL_FROM:18747633468@163.com}
+    from-name: ${MAIL_FROM_NAME:软考通}
+    user: ${MAIL_USER:18747633468@163.com}
+    pass: ${MAIL_PASS:EHJv28xzPCZTU8Bh}
+
+mybatis-plus:
+  mapper-locations: classpath:mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    banner: false
 
 # Swagger UI: http://localhost:9001/swagger-ui.html
 springdoc:

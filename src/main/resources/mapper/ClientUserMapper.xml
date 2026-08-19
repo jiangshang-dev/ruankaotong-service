@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.heima.mapper.ClientUserMapper">
+
+    <select id="selectByEmail" resultType="com.heima.entity.ClientUser">
+        SELECT id, email, name, created_at, last_login_at
+        FROM rk_client
+        WHERE email = #{email}
+        LIMIT 1
+    </select>
+
+    <select id="selectById" resultType="com.heima.entity.ClientUser">
+        SELECT id, email, name, created_at, last_login_at
+        FROM rk_client
+        WHERE id = #{id}
+        LIMIT 1
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO rk_client (email, name, last_login_at)
+        VALUES (#{email}, #{name}, NOW())
+    </insert>
+
+    <update id="touchLogin">
+        UPDATE rk_client SET last_login_at = NOW() WHERE id = #{id}
+    </update>
+</mapper>

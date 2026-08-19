@@ -22,25 +22,29 @@
           <input name="password" type="password" value="admin123" autocomplete="current-password">
         </div>
         <button class="btn block" type="submit">登录</button>
-        <div class="hint">演示账号 admin / admin123</div>
+        <div class="hint">默认账号 admin / admin123，登录后可在系统设置改密</div>
       </form>
     </div>
   </div>
   <div id="toast" class="toast" hidden></div>
-  <script src="./js/mock.js"></script>
   <script src="./js/common.js"></script>
   <script>
-    document.getElementById("login-form").addEventListener("submit", (e) => {
+    document.getElementById("login-form").addEventListener("submit", async (e) => {
       e.preventDefault();
       const fd = new FormData(e.currentTarget);
-      const account = String(fd.get("account") || "").trim();
-      const password = String(fd.get("password") || "").trim();
-      if (account !== MOCK.admin.account || password !== MOCK.admin.password) {
-        Admin.toast("账号或密码不对");
-        return;
+      try {
+        const data = await Admin.api("/api/admin/login", {
+          method: "POST",
+          body: JSON.stringify({
+            account: String(fd.get("account") || "").trim(),
+            password: String(fd.get("password") || "").trim(),
+          }),
+        });
+        Admin.saveLogin(data);
+        location.href = "./index.html";
+      } catch (err) {
+        Admin.toast(err.message || "登录失败");
       }
-      Admin.login(account, MOCK.admin.name);
-      location.href = "./index.html";
     });
   </script>
 </body>

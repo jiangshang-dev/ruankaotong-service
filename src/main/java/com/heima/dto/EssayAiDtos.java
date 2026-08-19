@@ -21,7 +21,11 @@ public final class EssayAiDtos {
             @Schema(description = "当前摘要原文")
             String abstractText,
             @Schema(description = "当前正文原文")
-            String bodyText
+            String bodyText,
+            @Schema(description = "科目 ID")
+            String subjectId,
+            @Schema(description = "论文文件名")
+            String fileName
     ) {
     }
 
@@ -46,7 +50,11 @@ public final class EssayAiDtos {
             @Schema(description = "摘要")
             String abstractText,
             @Schema(description = "正文")
-            String bodyText
+            String bodyText,
+            @Schema(description = "科目 ID")
+            String subjectId,
+            @Schema(description = "论文文件名")
+            String fileName
     ) {
     }
 

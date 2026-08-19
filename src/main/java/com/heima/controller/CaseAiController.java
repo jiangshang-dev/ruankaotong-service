@@ -8,13 +8,18 @@ import com.heima.dto.CaseAiDtos.CaseSolveResponse;
 import com.heima.dto.EssayAiDtos.ApiError;
 import com.heima.dto.EssayAiDtos.EssayGuideHistoryResponse;
 import com.heima.dto.EssayAiDtos.EssayGuideStreamEvent;
+import com.heima.service.AiQaLogService;
+import com.heima.service.AiQaStreamRecorder;
 import com.heima.service.CaseAiService;
+import com.heima.web.ClientAuthInterceptor;
+import com.heima.web.ClientIp;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -33,9 +38,16 @@ import reactor.core.publisher.Flux;
 public class CaseAiController {
 
     private final CaseAiService caseAiService;
+    private final AiQaLogService aiQaLogService;
+    private final AiQaStreamRecorder aiQaStreamRecorder;
 
-    public CaseAiController(CaseAiService caseAiService) {
+    public CaseAiController(
+            CaseAiService caseAiService,
+            AiQaLogService aiQaLogService,
+            AiQaStreamRecorder aiQaStreamRecorder) {
         this.caseAiService = caseAiService;
+        this.aiQaLogService = aiQaLogService;
+        this.aiQaStreamRecorder = aiQaStreamRecorder;
     }
 
     @Operation(
@@ -51,8 +63,20 @@ public class CaseAiController {
                     content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     @PostMapping("/solve")
-    public CaseSolveResponse solve(@RequestBody CaseSolveRequest request) {
-        return caseAiService.solve(request);
+    public CaseSolveResponse solve(@RequestBody CaseSolveRequest request, HttpServletRequest http) {
+        CaseSolveResponse res = caseAiService.solve(request);
+        aiQaLogService.record(
+                ClientIp.from(http),
+                "案例",
+                "案例作答",
+                request == null ? "" : request.subjectId(),
+                request == null ? "" : request.subject(),
+                request == null ? "" : request.fileName(),
+                request == null ? "" : request.title(),
+                "请根据截图作答",
+                res == null ? "" : res.answerText(),
+                ClientAuthInterceptor.email(http));
+        return res;
     }
 
     @Operation(
@@ -68,8 +92,21 @@ public class CaseAiController {
                     content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     @PostMapping("/score")
-    public CaseScoreResponse score(@RequestBody CaseScoreRequest request) {
-        return caseAiService.score(request);
+    public CaseScoreResponse score(@RequestBody CaseScoreRequest request, HttpServletRequest http) {
+        CaseScoreResponse res = caseAiService.score(request);
+        String answer = res == null ? "" : ("总分 " + res.totalScore() + "（" + res.level() + "）\n" + res.summary());
+        aiQaLogService.record(
+                ClientIp.from(http),
+                "案例",
+                "案例评分",
+                request == null ? "" : request.subjectId(),
+                request == null ? "" : request.subject(),
+                request == null ? "" : request.fileName(),
+                request == null ? "" : request.title(),
+                "请给当前作答评分",
+                answer,
+                ClientAuthInterceptor.email(http));
+        return res;
     }
 
     @Operation(
@@ -78,10 +115,22 @@ public class CaseAiController {
     )
     @PostMapping(value = "/explain/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<EssayGuideStreamEvent> explainStream(
-            @RequestBody CaseExplainRequest request, HttpServletResponse response) {
+            @RequestBody CaseExplainRequest request,
+            HttpServletRequest http,
+            HttpServletResponse response) {
         response.setHeader(HttpHeaders.CACHE_CONTROL, "no-cache");
         response.setHeader("X-Accel-Buffering", "no");
-        return caseAiService.explainStream(request);
+        return aiQaStreamRecorder.tap(
+                caseAiService.explainStream(request),
+                ClientIp.from(http),
+                "案例",
+                "案例讲解",
+                request == null ? "" : request.subjectId(),
+                request == null ? "" : request.subject(),
+                request == null ? "" : request.fileName(),
+                request == null ? "" : request.title(),
+                "请讲解这道案例题",
+                ClientAuthInterceptor.email(http));
     }
 
     @Operation(summary = "案例分析讲解历史", description = "读取 AgentScope 为该案例会话落盘的 agent_state")

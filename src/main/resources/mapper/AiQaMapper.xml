@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.heima.mapper.AiQaMapper">
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO rk_ai_qa
+            (client_ip, module, action, subject_id, subject_name, file_name, topic, question, answer, email)
+        VALUES
+            (#{clientIp}, #{module}, #{action}, #{subjectId}, #{subjectName}, #{fileName}, #{topic}, #{question}, #{answer}, #{email})
+    </insert>
+
+    <select id="selectById" resultType="com.heima.entity.AiQaLog">
+        SELECT id, client_ip, module, action, subject_id, subject_name, file_name, topic, question, answer, email, created_at
+        FROM rk_ai_qa
+        WHERE id = #{id}
+        LIMIT 1
+    </select>
+
+    <sql id="qaWhere">
+        <where>
+            <if test="q.ip != null and q.ip != ''">
+                AND (client_ip LIKE CONCAT('%', #{q.ip}, '%') OR email LIKE CONCAT('%', #{q.ip}, '%'))
+            </if>
+            <if test="q.module != null and q.module != ''">
+                AND module = #{q.module}
+            </if>
+            <if test="q.subject != null and q.subject != ''">
+                AND (subject_name = #{q.subject} OR subject_id = #{q.subject})
+            </if>
+            <if test="q.keyword != null and q.keyword != ''">
+                AND (
+                    question LIKE CONCAT('%', #{q.keyword}, '%')
+                    OR file_name LIKE CONCAT('%', #{q.keyword}, '%')
+                    OR topic LIKE CONCAT('%', #{q.keyword}, '%')
+                    OR email LIKE CONCAT('%', #{q.keyword}, '%')
+                )
+            </if>
+        </where>
+    </sql>
+
+    <select id="countList" resultType="long">
+        SELECT COUNT(*)
+        FROM rk_ai_qa
+        <include refid="qaWhere"/>
+    </select>
+
+    <select id="selectList" resultType="com.heima.entity.AiQaLog">
+        SELECT id, client_ip, module, action, subject_id, subject_name, file_name, topic, question, answer, email, created_at
+        FROM rk_ai_qa
+        <include refid="qaWhere"/>
+        ORDER BY created_at DESC, id DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="selectClients" resultType="com.heima.dto.AdminDtos$ClientIpRow">
+        SELECT
+            client_ip AS ip,
+            MAX(created_at) AS lastSeen,
+            COUNT(*) AS count,
+            GROUP_CONCAT(DISTINCT module ORDER BY module SEPARATOR ',') AS modules,
+            SUBSTRING_INDEX(GROUP_CONCAT(subject_name ORDER BY created_at DESC), ',', 1) AS subject,
+            SUBSTRING_INDEX(GROUP_CONCAT(email ORDER BY created_at DESC), ',', 1) AS email
+        FROM rk_ai_qa
+        <where>
+            <if test="ip != null and ip != ''">
+                AND (client_ip LIKE CONCAT('%', #{ip}, '%') OR email LIKE CONCAT('%', #{ip}, '%'))
+            </if>
+        </where>
+        GROUP BY client_ip
+        ORDER BY lastSeen DESC
+        LIMIT 200
+    </select>
+
+    <select id="selectDashboard" resultType="com.heima.dto.AdminDtos$DashboardStats">
+        SELECT
+            (SELECT COUNT(*) FROM rk_ai_qa WHERE created_at &gt;= CURDATE()) AS qaToday,
+            (SELECT COUNT(*) FROM rk_ai_qa) AS qaTotal,
+            (SELECT COUNT(DISTINCT client_ip) FROM rk_ai_qa) AS ips,
+            (SELECT COUNT(DISTINCT client_ip) FROM rk_ai_qa WHERE created_at &gt;= CURDATE()) AS ipsToday,
+            (SELECT COUNT(*) FROM rk_subject WHERE enabled = 1) AS subjects
+    </select>
+
+    <select id="selectRecent" resultType="com.heima.entity.AiQaLog">
+        SELECT id, client_ip, module, action, subject_id, subject_name, file_name, topic, question, answer, email, created_at
+        FROM rk_ai_qa
+        ORDER BY created_at DESC, id DESC
+        LIMIT #{limit}
+    </select>
+</mapper>

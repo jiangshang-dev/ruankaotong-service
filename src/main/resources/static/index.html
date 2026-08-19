@@ -36,7 +36,7 @@
           <h3>最近问答</h3>
           <table>
             <thead>
-              <tr><th>时间</th><th>客户端 IP</th><th>模块</th><th>问题</th></tr>
+              <tr><th>时间</th><th>客户端 IP</th><th>邮箱名称</th><th>模块</th><th>问题</th></tr>
             </thead>
             <tbody id="recent-qa"></tbody>
           </table>
@@ -45,7 +45,7 @@
           <h3>活跃客户端</h3>
           <table>
             <thead>
-              <tr><th>IP</th><th>最近访问</th><th>问答数</th></tr>
+              <tr><th>IP</th><th>邮箱名称</th><th>最近访问</th><th>问答数</th></tr>
             </thead>
             <tbody id="recent-ip"></tbody>
           </table>
@@ -53,30 +53,35 @@
       </div>
     </div>
   </div>
-  <script src="./js/mock.js"></script>
   <script src="./js/common.js"></script>
   <script>
-    document.addEventListener("admin:ready", () => {
-      document.getElementById("kpi-today").textContent = MOCK.stats.qaToday;
-      document.getElementById("kpi-total").textContent = MOCK.stats.qaTotal;
-      document.getElementById("kpi-ips").textContent = MOCK.stats.ips;
-      document.getElementById("kpi-ips-today").textContent = MOCK.stats.ipsToday;
-      document.getElementById("kpi-subjects").textContent = MOCK.subjects.filter((s) => s.enabled).length;
-      document.getElementById("recent-qa").innerHTML = MOCK.qa.slice(0, 5).map((row) => `
+    document.addEventListener("admin:ready", async () => {
+      const data = await Admin.api("/api/admin/dashboard");
+      const stats = data.stats || {};
+      document.getElementById("kpi-today").textContent = stats.qaToday || 0;
+      document.getElementById("kpi-total").textContent = stats.qaTotal || 0;
+      document.getElementById("kpi-ips").textContent = stats.ips || 0;
+      document.getElementById("kpi-ips-today").textContent = stats.ipsToday || 0;
+      document.getElementById("kpi-subjects").textContent = stats.subjects || 0;
+      const qas = data.recentQa || [];
+      document.getElementById("recent-qa").innerHTML = qas.length ? qas.map((row) => `
         <tr>
-          <td>${Admin.esc(row.createdAt.slice(11))}</td>
+          <td>${Admin.esc(Admin.fmt(row.createdAt).slice(11))}</td>
           <td><a class="ip" href="./qa.html?ip=${encodeURIComponent(row.clientIp)}">${Admin.esc(row.clientIp)}</a></td>
+          <td>${Admin.esc(row.email || "")}</td>
           <td><span class="badge info">${Admin.esc(row.module)}</span></td>
-          <td><a href="./qa-detail.html?id=${encodeURIComponent(row.id)}">${Admin.esc(row.question)}</a></td>
+          <td><a href="./qa-detail.html?id=${encodeURIComponent(row.id)}">${Admin.esc(row.question || row.action)}</a></td>
         </tr>
-      `).join("");
-      document.getElementById("recent-ip").innerHTML = MOCK.clients.slice(0, 5).map((row) => `
+      `).join("") : `<tr><td colspan="5">暂无记录</td></tr>`;
+      const ips = data.recentIp || [];
+      document.getElementById("recent-ip").innerHTML = ips.length ? ips.map((row) => `
         <tr>
           <td><a class="ip" href="./qa.html?ip=${encodeURIComponent(row.ip)}">${Admin.esc(row.ip)}</a></td>
-          <td>${Admin.esc(row.lastSeen)}</td>
-          <td>${row.count}</td>
+          <td>${Admin.esc(row.email || "")}</td>
+          <td>${Admin.esc(Admin.fmt(row.lastSeen))}</td>
+          <td>${row.count || 0}</td>
         </tr>
-      `).join("");
+      `).join("") : `<tr><td colspan="4">暂无客户端</td></tr>`;
     });
   </script>
 </body>

@@ -4,16 +4,21 @@ import com.heima.dto.EssayAiDtos.ApiError;
 import com.heima.dto.EssayAiDtos.EssayGuideHistoryResponse;
 import com.heima.dto.EssayAiDtos.EssayGuideStreamEvent;
 import com.heima.dto.KnowledgeAiDtos.KnowledgeTutorRequest;
+import com.heima.service.AiQaStreamRecorder;
 import com.heima.service.KnowledgeAiService;
+import com.heima.web.ClientAuthInterceptor;
+import com.heima.web.ClientIp;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -28,9 +33,12 @@ import reactor.core.publisher.Flux;
 public class KnowledgeAiController {
 
     private final KnowledgeAiService knowledgeAiService;
+    private final AiQaStreamRecorder aiQaStreamRecorder;
 
-    public KnowledgeAiController(KnowledgeAiService knowledgeAiService) {
+    public KnowledgeAiController(
+            KnowledgeAiService knowledgeAiService, AiQaStreamRecorder aiQaStreamRecorder) {
         this.knowledgeAiService = knowledgeAiService;
+        this.aiQaStreamRecorder = aiQaStreamRecorder;
     }
 
     @Operation(
@@ -39,10 +47,27 @@ public class KnowledgeAiController {
     )
     @PostMapping(value = "/tutor/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<EssayGuideStreamEvent> tutorStream(
-            @RequestBody KnowledgeTutorRequest request, HttpServletResponse response) {
+            @RequestBody KnowledgeTutorRequest request,
+            HttpServletRequest http,
+            HttpServletResponse response) {
         response.setHeader(HttpHeaders.CACHE_CONTROL, "no-cache");
         response.setHeader("X-Accel-Buffering", "no");
-        return knowledgeAiService.tutorStream(request);
+        boolean followUp = request != null && Boolean.TRUE.equals(request.followUp());
+        String question = request == null ? "" : request.question();
+        if (!StringUtils.hasText(question)) {
+            question = "生成辅导";
+        }
+        return aiQaStreamRecorder.tap(
+                knowledgeAiService.tutorStream(request),
+                ClientIp.from(http),
+                "知识点",
+                followUp ? "追问" : "综合知识辅导",
+                request == null ? "" : request.subjectId(),
+                request == null ? "" : request.subject(),
+                request == null ? "" : request.fileName(),
+                request == null ? "" : request.title(),
+                question,
+                ClientAuthInterceptor.email(http));
     }
 
     @Operation(summary = "综合知识辅导历史", description = "读取 AgentScope 为该笔记会话落盘的 agent_state")

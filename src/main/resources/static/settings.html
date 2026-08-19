@@ -12,11 +12,15 @@
       <div class="grid-2">
         <div class="card">
           <h3>管理员登录</h3>
-          <p class="note">只有管理后台要登录。改密暂不生效。</p>
+          <p class="note">只有管理后台要账号密码登录。桌面端笔记编辑免登录，使用 AI 时需邮箱验证码。</p>
           <form id="admin-form">
             <div class="field">
               <label>当前账号</label>
-              <input value="admin" disabled>
+              <input id="account" disabled>
+            </div>
+            <div class="field">
+              <label>原密码</label>
+              <input name="oldPassword" type="password">
             </div>
             <div class="field">
               <label>新密码</label>
@@ -31,11 +35,11 @@
         </div>
         <div class="card">
           <h3>客户端规则</h3>
-          <p class="note">桌面端（知识点笔记 / 论文练习 / 案例分析）不要求考生登录。</p>
+          <p class="note">桌面端编辑笔记、论文、案例不要求登录；生成辅导 / 润色 / 讲解 / 评分需要邮箱验证码登录。</p>
           <table>
             <tbody>
-              <tr><th>身份</th><td>不登录，只记客户端 IP</td></tr>
-              <tr><th>记录内容</th><td>IP、学科、文件、问题、AI 回答、时间</td></tr>
+              <tr><th>身份</th><td>AI 用邮箱验证码登录，同时记录客户端 IP 和邮箱名称</td></tr>
+              <tr><th>记录内容</th><td>IP、邮箱名称、学科、文件、问题、AI 回答、时间</td></tr>
               <tr><th>会话</th><td>仍可按科目 + 文件名读 Redis 历史</td></tr>
               <tr><th>管理端</th><td>必须登录后才能看问答和配置</td></tr>
             </tbody>
@@ -44,11 +48,12 @@
       </div>
     </div>
   </div>
-  <script src="./js/mock.js"></script>
   <script src="./js/common.js"></script>
   <script>
     document.addEventListener("admin:ready", () => {
-      document.getElementById("admin-form").addEventListener("submit", (e) => {
+      const user = Admin.user();
+      document.getElementById("account").value = user?.account || "admin";
+      document.getElementById("admin-form").addEventListener("submit", async (e) => {
         e.preventDefault();
         const fd = new FormData(e.currentTarget);
         const password = String(fd.get("password") || "");
@@ -61,7 +66,20 @@
           Admin.toast("两次密码不一致");
           return;
         }
-        Admin.toast("密码未写入后端，仅页面演示");
+        try {
+          await Admin.api("/api/admin/password", {
+            method: "POST",
+            body: JSON.stringify({
+              oldPassword: String(fd.get("oldPassword") || ""),
+              newPassword: password,
+            }),
+          });
+          Admin.toast("密码已更新");
+          e.currentTarget.reset();
+          document.getElementById("account").value = user?.account || "admin";
+        } catch (err) {
+          Admin.toast(err.message);
+        }
       });
     });
   </script>

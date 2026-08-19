@@ -9,11 +9,36 @@
 <body>
   <div id="app">
     <div id="page" data-nav="subjects" data-title="学科管理">
-      <p class="note">对应桌面端左侧「学科」列表。启用后客户端可选；保存暂不写后端。</p>
+      <p class="note">对应桌面端左侧「学科」列表。停用后客户端不再显示。</p>
+      <div class="card" style="margin-bottom:14px">
+        <h3>新增学科</h3>
+        <form id="add-form" class="form-grid">
+          <div class="field">
+            <label>ID（英文）</label>
+            <input name="id" placeholder="architect" required>
+          </div>
+          <div class="field">
+            <label>名称</label>
+            <input name="name" placeholder="系统架构设计师" required>
+          </div>
+          <div class="field">
+            <label>简称</label>
+            <input name="shortName" placeholder="架构">
+          </div>
+          <div class="field">
+            <label>级别</label>
+            <select name="level">
+              <option>高级</option>
+              <option>中级</option>
+              <option>初级</option>
+            </select>
+          </div>
+          <div class="actions full">
+            <button class="btn" type="submit">保存</button>
+          </div>
+        </form>
+      </div>
       <div class="card">
-        <div class="toolbar">
-          <button class="btn" type="button" id="add">新增学科</button>
-        </div>
         <table>
           <thead>
             <tr>
@@ -30,34 +55,59 @@
       </div>
     </div>
   </div>
-  <script src="./js/mock.js"></script>
   <script src="./js/common.js"></script>
   <script>
-    function renderList() {
-      document.getElementById("rows").innerHTML = MOCK.subjects.map((s) => `
+    async function renderList() {
+      const rows = await Admin.api("/api/admin/subjects");
+      document.getElementById("rows").innerHTML = rows.map((s) => `
         <tr>
           <td><code class="path">${Admin.esc(s.id)}</code></td>
           <td>${Admin.esc(s.name)}</td>
           <td>${Admin.esc(s.shortName)}</td>
           <td><span class="badge ${s.level === "高级" ? "ok" : s.level === "中级" ? "info" : "muted"}">${Admin.esc(s.level)}</span></td>
-          <td>${s.enabled ? '<span class="badge ok">启用</span>' : '<span class="badge muted">停用</span>'}</td>
+          <td>${s.enabled === 1 ? '<span class="badge ok">启用</span>' : '<span class="badge muted">停用</span>'}</td>
           <td>
-            <button class="btn ghost sm toggle" data-id="${Admin.esc(s.id)}" type="button">${s.enabled ? "停用" : "启用"}</button>
+            <button class="btn ghost sm toggle" data-id="${Admin.esc(s.id)}" data-on="${s.enabled === 1 ? "1" : "0"}" type="button">${s.enabled === 1 ? "停用" : "启用"}</button>
           </td>
         </tr>
       `).join("");
     }
-    document.addEventListener("admin:ready", () => {
-      renderList();
-      document.getElementById("rows").addEventListener("click", (e) => {
+    document.addEventListener("admin:ready", async () => {
+      await renderList();
+      document.getElementById("rows").addEventListener("click", async (e) => {
         const btn = e.target.closest(".toggle");
         if (!btn) return;
-        const item = MOCK.subjects.find((s) => s.id === btn.dataset.id);
-        if (item) item.enabled = !item.enabled;
-        Admin.toast("仅页面切换，未写入后端");
-        renderList();
+        try {
+          await Admin.api("/api/admin/subjects/toggle", {
+            method: "POST",
+            body: JSON.stringify({ id: btn.dataset.id, enabled: btn.dataset.on !== "1" }),
+          });
+          await renderList();
+        } catch (err) {
+          Admin.toast(err.message);
+        }
       });
-      document.getElementById("add").onclick = () => Admin.toast("新增学科尚未接入后端");
+      document.getElementById("add-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.currentTarget);
+        try {
+          await Admin.api("/api/admin/subjects", {
+            method: "POST",
+            body: JSON.stringify({
+              id: String(fd.get("id") || "").trim(),
+              name: String(fd.get("name") || "").trim(),
+              shortName: String(fd.get("shortName") || "").trim(),
+              level: String(fd.get("level") || "中级"),
+              enabled: true,
+            }),
+          });
+          e.currentTarget.reset();
+          Admin.toast("已新增学科");
+          await renderList();
+        } catch (err) {
+          Admin.toast(err.message);
+        }
+      });
     });
   </script>
 </body>

@@ -9,13 +9,18 @@ import com.heima.dto.EssayAiDtos.EssayPolishRequest;
 import com.heima.dto.EssayAiDtos.EssayPolishResponse;
 import com.heima.dto.EssayAiDtos.EssayScoreRequest;
 import com.heima.dto.EssayAiDtos.EssayScoreResponse;
+import com.heima.service.AiQaLogService;
+import com.heima.service.AiQaStreamRecorder;
 import com.heima.service.EssayAiService;
+import com.heima.web.ClientAuthInterceptor;
+import com.heima.web.ClientIp;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -34,9 +39,16 @@ import reactor.core.publisher.Flux;
 public class EssayAiController {
 
     private final EssayAiService essayAiService;
+    private final AiQaLogService aiQaLogService;
+    private final AiQaStreamRecorder aiQaStreamRecorder;
 
-    public EssayAiController(EssayAiService essayAiService) {
+    public EssayAiController(
+            EssayAiService essayAiService,
+            AiQaLogService aiQaLogService,
+            AiQaStreamRecorder aiQaStreamRecorder) {
         this.essayAiService = essayAiService;
+        this.aiQaLogService = aiQaLogService;
+        this.aiQaStreamRecorder = aiQaStreamRecorder;
     }
 
     @Operation(
@@ -52,8 +64,21 @@ public class EssayAiController {
                     content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     @PostMapping("/polish")
-    public EssayPolishResponse polish(@RequestBody EssayPolishRequest request) {
-        return essayAiService.polish(request);
+    public EssayPolishResponse polish(@RequestBody EssayPolishRequest request, HttpServletRequest http) {
+        EssayPolishResponse res = essayAiService.polish(request);
+        String part = request == null ? "" : request.part();
+        aiQaLogService.record(
+                ClientIp.from(http),
+                "论文",
+                "论文润色",
+                request == null ? "" : request.subjectId(),
+                request == null ? "" : request.subject(),
+                request == null ? "" : request.fileName(),
+                request == null ? "" : request.topic(),
+                "润色范围：" + part,
+                res == null ? "" : res.raw(),
+                ClientAuthInterceptor.email(http));
+        return res;
     }
 
     @Operation(
@@ -71,8 +96,21 @@ public class EssayAiController {
                     content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     @PostMapping("/score")
-    public EssayScoreResponse score(@RequestBody EssayScoreRequest request) {
-        return essayAiService.score(request);
+    public EssayScoreResponse score(@RequestBody EssayScoreRequest request, HttpServletRequest http) {
+        EssayScoreResponse res = essayAiService.score(request);
+        String answer = res == null ? "" : ("总分 " + res.totalScore() + "（" + res.level() + "）\n" + res.summary());
+        aiQaLogService.record(
+                ClientIp.from(http),
+                "论文",
+                "论文评分",
+                request == null ? "" : request.subjectId(),
+                request == null ? "" : request.subject(),
+                request == null ? "" : request.fileName(),
+                request == null ? "" : request.topic(),
+                "请给当前论文评分",
+                answer,
+                ClientAuthInterceptor.email(http));
+        return res;
     }
 
     @Operation(
@@ -88,8 +126,20 @@ public class EssayAiController {
                     content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     @PostMapping("/guide")
-    public EssayGuideResponse guide(@RequestBody EssayGuideRequest request) {
-        return essayAiService.guide(request);
+    public EssayGuideResponse guide(@RequestBody EssayGuideRequest request, HttpServletRequest http) {
+        EssayGuideResponse res = essayAiService.guide(request);
+        aiQaLogService.record(
+                ClientIp.from(http),
+                "论文",
+                "论文指导",
+                request == null ? "" : request.subjectId(),
+                request == null ? "" : request.subject(),
+                request == null ? "" : request.fileName(),
+                request == null ? "" : request.topic(),
+                "请按题目给出写作方案",
+                res == null ? "" : res.raw(),
+                ClientAuthInterceptor.email(http));
+        return res;
     }
 
     @Operation(
@@ -98,10 +148,22 @@ public class EssayAiController {
     )
     @PostMapping(value = "/guide/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<EssayGuideStreamEvent> guideStream(
-            @RequestBody EssayGuideRequest request, HttpServletResponse response) {
+            @RequestBody EssayGuideRequest request,
+            HttpServletRequest http,
+            HttpServletResponse response) {
         response.setHeader(HttpHeaders.CACHE_CONTROL, "no-cache");
         response.setHeader("X-Accel-Buffering", "no");
-        return essayAiService.guideStream(request);
+        return aiQaStreamRecorder.tap(
+                essayAiService.guideStream(request),
+                ClientIp.from(http),
+                "论文",
+                "论文指导",
+                request == null ? "" : request.subjectId(),
+                request == null ? "" : request.subject(),
+                request == null ? "" : request.fileName(),
+                request == null ? "" : request.topic(),
+                "请按题目帮我搭一个可写的大型项目。",
+                ClientAuthInterceptor.email(http));
     }
 
     @Operation(summary = "论文指导历史", description = "读取 AgentScope 为该论文会话落盘的 agent_state")

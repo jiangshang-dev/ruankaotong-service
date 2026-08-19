@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.heima.mapper.ClientSessionMapper">
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO rk_client_session (client_id, token, expire_at)
+        VALUES (#{clientId}, #{token}, #{expireAt})
+    </insert>
+
+    <select id="selectByToken" resultType="com.heima.entity.ClientSession">
+        SELECT id, client_id, token, expire_at, created_at
+        FROM rk_client_session
+        WHERE token = #{token}
+          AND expire_at &gt; NOW()
+        LIMIT 1
+    </select>
+
+    <delete id="deleteByToken">
+        DELETE FROM rk_client_session WHERE token = #{token}
+    </delete>
+
+    <delete id="deleteExpired">
+        DELETE FROM rk_client_session WHERE expire_at &lt;= NOW()
+    </delete>
+</mapper>

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.heima.mapper.RkSubjectMapper">
+
+    <select id="selectAll" resultType="com.heima.entity.RkSubject">
+        SELECT id, name, short_name, level, color, sort_no, enabled, created_at, updated_at
+        FROM rk_subject
+        ORDER BY sort_no ASC, id ASC
+    </select>
+
+    <select id="selectEnabled" resultType="com.heima.entity.RkSubject">
+        SELECT id, name, short_name, level, color, sort_no, enabled, created_at, updated_at
+        FROM rk_subject
+        WHERE enabled = 1
+        ORDER BY sort_no ASC, id ASC
+    </select>
+
+    <select id="selectById" resultType="com.heima.entity.RkSubject">
+        SELECT id, name, short_name, level, color, sort_no, enabled, created_at, updated_at
+        FROM rk_subject
+        WHERE id = #{id}
+        LIMIT 1
+    </select>
+
+    <insert id="insert">
+        INSERT INTO rk_subject (id, name, short_name, level, color, sort_no, enabled)
+        VALUES (#{id}, #{name}, #{shortName}, #{level}, #{color}, #{sortNo}, #{enabled})
+    </insert>
+
+    <update id="update">
+        UPDATE rk_subject
+        SET name = #{name},
+            short_name = #{shortName},
+            level = #{level},
+            color = #{color},
+            sort_no = #{sortNo},
+            enabled = #{enabled},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <select id="countAll" resultType="int">
+        SELECT COUNT(*) FROM rk_subject
+    </select>
+</mapper>

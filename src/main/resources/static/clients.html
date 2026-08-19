@@ -9,16 +9,17 @@
 <body>
   <div id="app">
     <div id="page" data-nav="clients" data-title="客户端 IP">
-      <p class="note">桌面端不登录。每次 AI 请求记录来源 IP，用 IP 区分考生机器。</p>
+      <p class="note">笔记、论文、案例可免登录使用。调用 AI 时需邮箱验证码登录，同时记录来源 IP 和邮箱名称。</p>
       <div class="card">
         <div class="toolbar">
-          <input id="q" placeholder="搜索 IP">
+          <input id="q" placeholder="搜索 IP / 邮箱名称">
           <button class="btn ghost" type="button" id="search">筛选</button>
         </div>
         <table>
           <thead>
             <tr>
               <th>客户端 IP</th>
+              <th>邮箱名称</th>
               <th>最近访问</th>
               <th>问答次数</th>
               <th>用过的模块</th>
@@ -31,22 +32,22 @@
       </div>
     </div>
   </div>
-  <script src="./js/mock.js"></script>
   <script src="./js/common.js"></script>
   <script>
-    function renderList() {
+    async function renderList() {
       const q = (document.getElementById("q").value || "").trim();
-      const rows = MOCK.clients.filter((c) => !q || c.ip.includes(q));
-      document.getElementById("rows").innerHTML = rows.map((c) => `
+      const rows = await Admin.api("/api/admin/clients?ip=" + encodeURIComponent(q));
+      document.getElementById("rows").innerHTML = rows.length ? rows.map((c) => `
         <tr>
           <td class="ip">${Admin.esc(c.ip)}</td>
-          <td>${Admin.esc(c.lastSeen)}</td>
-          <td>${c.count}</td>
-          <td>${c.modules.map((m) => `<span class="badge info">${Admin.esc(m)}</span>`).join(" ")}</td>
-          <td>${Admin.esc(c.subject)}</td>
+          <td>${Admin.esc(c.email || "")}</td>
+          <td>${Admin.esc(Admin.fmt(c.lastSeen))}</td>
+          <td>${c.count || 0}</td>
+          <td>${String(c.modules || "").split(",").filter(Boolean).map((m) => `<span class="badge info">${Admin.esc(m)}</span>`).join(" ")}</td>
+          <td>${Admin.esc(c.subject || "")}</td>
           <td><a class="btn ghost sm" href="./qa.html?ip=${encodeURIComponent(c.ip)}">查看问答</a></td>
         </tr>
-      `).join("");
+      `).join("") : `<tr><td colspan="7">暂无客户端</td></tr>`;
     }
     document.addEventListener("admin:ready", () => {
       renderList();

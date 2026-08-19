@@ -27,7 +27,11 @@ public final class CaseAiDtos {
             @Schema(description = "题目区附加文字（图片之外的说明）")
             String topicText,
             @Schema(description = "题目截图，至少 1 张")
-            List<CaseImage> images
+            List<CaseImage> images,
+            @Schema(description = "科目 ID")
+            String subjectId,
+            @Schema(description = "案例文件名")
+            String fileName
     ) {
     }
 
@@ -85,7 +89,11 @@ public final class CaseAiDtos {
             @Schema(description = "考生作答，只需标清题号")
             String answerText,
             @Schema(description = "题目截图")
-            List<CaseImage> images
+            List<CaseImage> images,
+            @Schema(description = "科目 ID")
+            String subjectId,
+            @Schema(description = "案例文件名")
+            String fileName
     ) {
     }
 

@@ -9,7 +9,7 @@
 <body>
   <div id="app">
     <div id="page" data-nav="qa" data-title="AI 问答">
-      <p class="note">对应桌面端三个入口：知识点笔记辅导、论文练习、案例分析。每条记录带来源 IP，不绑定账号。</p>
+      <p class="note">对应桌面端三个入口：知识点笔记辅导、论文练习、案例分析。调用 AI 后记录来源 IP 和登录邮箱名称。</p>
       <div class="card">
         <div class="toolbar">
           <input id="ip" placeholder="客户端 IP">
@@ -22,7 +22,7 @@
           <select id="subject">
             <option value="">全部学科</option>
           </select>
-          <input id="kw" placeholder="问题 / 文件名">
+          <input id="kw" placeholder="问题 / 文件名 / 邮箱名称">
           <button class="btn ghost" type="button" id="search">筛选</button>
         </div>
         <table>
@@ -30,6 +30,7 @@
             <tr>
               <th>时间</th>
               <th>客户端 IP</th>
+              <th>邮箱名称</th>
               <th>模块</th>
               <th>动作</th>
               <th>学科</th>
@@ -44,41 +45,41 @@
       </div>
     </div>
   </div>
-  <script src="./js/mock.js"></script>
   <script src="./js/common.js"></script>
   <script>
-    function renderList() {
-      const ip = document.getElementById("ip").value.trim();
-      const module = document.getElementById("module").value;
-      const subject = document.getElementById("subject").value;
-      const kw = document.getElementById("kw").value.trim();
-      const rows = MOCK.qa.filter((row) => {
-        if (ip && !row.clientIp.includes(ip)) return false;
-        if (module && row.module !== module) return false;
-        if (subject && row.subject !== subject) return false;
-        if (kw && !(row.question.includes(kw) || row.fileName.includes(kw) || row.topic.includes(kw))) return false;
-        return true;
+    async function renderList() {
+      const params = new URLSearchParams({
+        page: "1",
+        size: "50",
+        ip: document.getElementById("ip").value.trim(),
+        module: document.getElementById("module").value,
+        subject: document.getElementById("subject").value,
+        keyword: document.getElementById("kw").value.trim(),
       });
-      document.getElementById("rows").innerHTML = rows.map((row) => `
+      const data = await Admin.api("/api/admin/qa?" + params.toString());
+      const rows = data.records || [];
+      document.getElementById("rows").innerHTML = rows.length ? rows.map((row) => `
         <tr>
-          <td>${Admin.esc(row.createdAt)}</td>
+          <td>${Admin.esc(Admin.fmt(row.createdAt))}</td>
           <td class="ip">${Admin.esc(row.clientIp)}</td>
+          <td>${Admin.esc(row.email || "")}</td>
           <td><span class="badge info">${Admin.esc(row.module)}</span></td>
           <td>${Admin.esc(row.action)}</td>
-          <td>${Admin.esc(row.subject)}</td>
+          <td>${Admin.esc(row.subjectName || "")}</td>
           <td>
-            <div>${Admin.esc(row.fileName)}</div>
-            <small style="color:var(--muted)">${Admin.esc(row.topic)}</small>
+            <div>${Admin.esc(row.fileName || "")}</div>
+            <small style="color:var(--muted)">${Admin.esc(row.topic || "")}</small>
           </td>
-          <td>${Admin.esc(row.question)}</td>
+          <td>${Admin.esc(row.question || "")}</td>
           <td><a class="btn ghost sm" href="./qa-detail.html?id=${encodeURIComponent(row.id)}">详情</a></td>
         </tr>
-      `).join("") || `<tr><td colspan="8">没有匹配的记录</td></tr>`;
-      document.getElementById("pager").textContent = `共 ${rows.length} 条（示例数据）`;
+      `).join("") : `<tr><td colspan="9">没有匹配的记录</td></tr>`;
+      document.getElementById("pager").textContent = `共 ${data.total || 0} 条`;
     }
-    document.addEventListener("admin:ready", () => {
+    document.addEventListener("admin:ready", async () => {
+      const subjects = await Admin.api("/api/admin/subjects");
       const subjectSel = document.getElementById("subject");
-      MOCK.subjects.forEach((s) => {
+      subjects.forEach((s) => {
         const opt = document.createElement("option");
         opt.value = s.name;
         opt.textContent = s.name;
@@ -86,7 +87,7 @@
       });
       const presetIp = Admin.qs("ip");
       if (presetIp) document.getElementById("ip").value = presetIp;
-      renderList();
+      await renderList();
       document.getElementById("search").onclick = renderList;
       ["ip", "kw"].forEach((id) => {
         document.getElementById(id).addEventListener("keydown", (e) => {

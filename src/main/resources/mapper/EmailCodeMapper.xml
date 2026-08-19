@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.heima.mapper.EmailCodeMapper">
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO rk_email_code (email, code, expire_at, used)
+        VALUES (#{email}, #{code}, #{expireAt}, 0)
+    </insert>
+
+    <select id="selectLatest" resultType="com.heima.entity.EmailCode">
+        SELECT id, email, code, expire_at, used, created_at
+        FROM rk_email_code
+        WHERE email = #{email}
+          AND used = 0
+          AND expire_at &gt; NOW()
+        ORDER BY id DESC
+        LIMIT 1
+    </select>
+
+    <update id="markUsed">
+        UPDATE rk_email_code SET used = 1 WHERE id = #{id}
+    </update>
+
+    <select id="countRecent" resultType="int">
+        SELECT COUNT(*)
+        FROM rk_email_code
+        WHERE email = #{email}
+          AND created_at &gt;= DATE_SUB(NOW(), INTERVAL #{seconds} SECOND)
+    </select>
+</mapper>
