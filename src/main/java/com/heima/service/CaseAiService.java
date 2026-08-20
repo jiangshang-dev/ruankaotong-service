@@ -109,14 +109,14 @@ public class CaseAiService {
         return parseScore(raw);
     }
 
-    public EssayGuideHistoryResponse listExplainHistory(String subjectId, String fileName) {
-        return historyService.list(subjectId, fileName, "case");
+    public EssayGuideHistoryResponse listExplainHistory(String subjectId, String fileName, String email) {
+        return historyService.list(subjectId, fileName, "case", email);
     }
 
     /**
      * 案例分析讲解流式输出：HarnessAgent.streamEvents，接口直接返回 Flux。
      */
-    public Flux<EssayGuideStreamEvent> explainStream(CaseExplainRequest req) {
+    public Flux<EssayGuideStreamEvent> explainStream(CaseExplainRequest req, String email) {
         List<CaseImage> images = normalizeImages(req == null ? null : req.images());
         if (images.isEmpty() && (req == null || !StringUtils.hasText(req.topicText()))) {
             throw new IllegalArgumentException("请先粘贴题目截图后再讲解");
@@ -128,7 +128,7 @@ public class CaseAiService {
 
         String recordId = UUID.randomUUID().toString().replace("-", "");
         long createdAt = System.currentTimeMillis();
-        String subjectId = EssayGuideHistoryService.userId(req == null ? null : req.subjectId());
+        String subjectId = EssayGuideHistoryService.userId(req == null ? null : req.subjectId(), email);
         String fileName = EssayGuideHistoryService.sessionId(req == null ? null : req.fileName(), "case");
         StringBuilder acc = new StringBuilder();
         StringBuilder preview = new StringBuilder();

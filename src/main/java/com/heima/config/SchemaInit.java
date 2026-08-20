@@ -96,6 +96,7 @@ public class SchemaInit implements ApplicationRunner {
                   id BIGINT NOT NULL AUTO_INCREMENT,
                   email VARCHAR(128) NOT NULL,
                   name VARCHAR(128) NOT NULL,
+                  enabled TINYINT NOT NULL DEFAULT 1,
                   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                   last_login_at DATETIME DEFAULT NULL,
                   PRIMARY KEY (id),
@@ -128,6 +129,10 @@ public class SchemaInit implements ApplicationRunner {
                 """);
         addColumnIfMissing("rk_ai_qa", "email",
                 "ALTER TABLE rk_ai_qa ADD COLUMN email VARCHAR(128) DEFAULT NULL AFTER answer");
+        addColumnIfMissing("rk_client", "enabled",
+                "ALTER TABLE rk_client ADD COLUMN enabled TINYINT NOT NULL DEFAULT 1 AFTER name");
+        jdbcTemplate.update(
+                "UPDATE rk_client SET name = CONCAT('考生', LPAD(id, 4, '0')) WHERE name = email OR name = '' OR name = '考生'");
         if (adminUserMapper.countAll() == 0) {
             AdminUser admin = new AdminUser();
             admin.setAccount("admin");

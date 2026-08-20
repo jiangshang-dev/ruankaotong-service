@@ -154,7 +154,7 @@ public class EssayAiController {
         response.setHeader(HttpHeaders.CACHE_CONTROL, "no-cache");
         response.setHeader("X-Accel-Buffering", "no");
         return aiQaStreamRecorder.tap(
-                essayAiService.guideStream(request),
+                essayAiService.guideStream(request, ClientAuthInterceptor.email(http)),
                 ClientIp.from(http),
                 "论文",
                 "论文指导",
@@ -170,8 +170,9 @@ public class EssayAiController {
     @GetMapping("/guide/history")
     public EssayGuideHistoryResponse guideHistory(
             @RequestParam(required = false, defaultValue = "") String subjectId,
-            @RequestParam(required = false, defaultValue = "") String fileName) {
-        return essayAiService.listGuideHistory(subjectId, fileName);
+            @RequestParam(required = false, defaultValue = "") String fileName,
+            HttpServletRequest http) {
+        return essayAiService.listGuideHistory(subjectId, fileName, ClientAuthInterceptor.email(http));
     }
 
     @Operation(summary = "健康检查", description = "用于确认 AI 服务进程可用")

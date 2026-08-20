@@ -121,7 +121,7 @@ public class CaseAiController {
         response.setHeader(HttpHeaders.CACHE_CONTROL, "no-cache");
         response.setHeader("X-Accel-Buffering", "no");
         return aiQaStreamRecorder.tap(
-                caseAiService.explainStream(request),
+                caseAiService.explainStream(request, ClientAuthInterceptor.email(http)),
                 ClientIp.from(http),
                 "案例",
                 "案例讲解",
@@ -137,8 +137,9 @@ public class CaseAiController {
     @GetMapping("/explain/history")
     public EssayGuideHistoryResponse explainHistory(
             @RequestParam(required = false, defaultValue = "") String subjectId,
-            @RequestParam(required = false, defaultValue = "") String fileName) {
-        return caseAiService.listExplainHistory(subjectId, fileName);
+            @RequestParam(required = false, defaultValue = "") String fileName,
+            HttpServletRequest http) {
+        return caseAiService.listExplainHistory(subjectId, fileName, ClientAuthInterceptor.email(http));
     }
 
     @Operation(summary = "健康检查", description = "用于确认案例分析 AI 服务可用")

@@ -71,14 +71,14 @@ public class KnowledgeAiService {
         }
     }
 
-    public EssayGuideHistoryResponse listTutorHistory(String subjectId, String fileName) {
-        return historyService.list(subjectId, fileName, SESSION_PREFIX, true);
+    public EssayGuideHistoryResponse listTutorHistory(String subjectId, String fileName, String email) {
+        return historyService.list(subjectId, fileName, SESSION_PREFIX, true, email);
     }
 
     /**
      * 综合知识辅导流式输出：HarnessAgent.streamEvents，接口直接返回 Flux。
      */
-    public Flux<EssayGuideStreamEvent> tutorStream(KnowledgeTutorRequest req) {
+    public Flux<EssayGuideStreamEvent> tutorStream(KnowledgeTutorRequest req, String email) {
         if (req == null || (!StringUtils.hasText(req.title())
                 && !StringUtils.hasText(req.noteText()) && !StringUtils.hasText(req.question()))) {
             throw new IllegalArgumentException("请先填写笔记标题、正文或要问的问题");
@@ -90,7 +90,7 @@ public class KnowledgeAiService {
 
         String recordId = UUID.randomUUID().toString().replace("-", "");
         long createdAt = System.currentTimeMillis();
-        String subjectId = EssayGuideHistoryService.userId(req.subjectId());
+        String subjectId = EssayGuideHistoryService.userId(req.subjectId(), email);
         String fileName = EssayGuideHistoryService.sessionId(req.fileName(), SESSION_PREFIX);
         StringBuilder acc = new StringBuilder();
         StringBuilder preview = new StringBuilder();

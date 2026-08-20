@@ -14,4 +14,6 @@ public interface ClientSessionMapper {
     int deleteByToken(@Param("token") String token);
 
     int deleteExpired();
+
+    int deleteByClientId(@Param("clientId") Long clientId);
 }

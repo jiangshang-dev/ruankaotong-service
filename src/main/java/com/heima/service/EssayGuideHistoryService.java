@@ -35,17 +35,20 @@ public class EssayGuideHistoryService {
         this.stateStore = stateStore;
     }
 
-    public EssayGuideHistoryResponse list(String subjectId, String fileName) {
-        return list(subjectId, fileName, "");
+    public EssayGuideHistoryResponse list(String subjectId, String fileName, String email) {
+        return list(subjectId, fileName, "", false, email);
     }
 
-    public EssayGuideHistoryResponse list(String subjectId, String fileName, String sessionPrefix) {
-        return list(subjectId, fileName, sessionPrefix, false);
+    public EssayGuideHistoryResponse list(String subjectId, String fileName, String sessionPrefix, String email) {
+        return list(subjectId, fileName, sessionPrefix, false, email);
     }
 
     public EssayGuideHistoryResponse list(
-            String subjectId, String fileName, String sessionPrefix, boolean includeUser) {
-        String userId = userId(subjectId);
+            String subjectId, String fileName, String sessionPrefix, boolean includeUser, String email) {
+        if (!StringUtils.hasText(email)) {
+            return new EssayGuideHistoryResponse("", "", List.of());
+        }
+        String userId = userId(subjectId, email);
         String sessionId = sessionId(fileName, sessionPrefix);
         List<EssayGuideHistoryRecord> records = new ArrayList<>();
         try {
@@ -61,8 +64,13 @@ public class EssayGuideHistoryService {
         return new EssayGuideHistoryResponse(userId, sessionId, records);
     }
 
-    static String userId(String subjectId) {
-        return normalize(subjectId, "_");
+    static String userId(String subjectId, String email) {
+        String subject = normalize(subjectId, "_");
+        String mail = normalize(email, "").toLowerCase().replace('/', '_').replace(':', '_');
+        if (!StringUtils.hasText(mail)) {
+            throw new IllegalArgumentException("请先登录后再使用 AI");
+        }
+        return mail + "__" + subject;
     }
 
     static String sessionId(String fileName) {

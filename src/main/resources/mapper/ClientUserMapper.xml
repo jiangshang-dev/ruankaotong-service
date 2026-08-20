@@ -4,25 +4,51 @@
 <mapper namespace="com.heima.mapper.ClientUserMapper">
 
     <select id="selectByEmail" resultType="com.heima.entity.ClientUser">
-        SELECT id, email, name, created_at, last_login_at
+        SELECT id, email, name, enabled, created_at, last_login_at
         FROM rk_client
         WHERE email = #{email}
         LIMIT 1
     </select>
 
     <select id="selectById" resultType="com.heima.entity.ClientUser">
-        SELECT id, email, name, created_at, last_login_at
+        SELECT id, email, name, enabled, created_at, last_login_at
         FROM rk_client
         WHERE id = #{id}
         LIMIT 1
     </select>
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO rk_client (email, name, last_login_at)
-        VALUES (#{email}, #{name}, NOW())
+        INSERT INTO rk_client (email, name, enabled, last_login_at)
+        VALUES (#{email}, #{name}, 1, NOW())
     </insert>
 
     <update id="touchLogin">
         UPDATE rk_client SET last_login_at = NOW() WHERE id = #{id}
     </update>
+
+    <update id="updateName">
+        UPDATE rk_client SET name = #{name} WHERE id = #{id}
+    </update>
+
+    <update id="updateEnabled">
+        UPDATE rk_client SET enabled = #{enabled} WHERE id = #{id}
+    </update>
+
+    <select id="selectAdminList" resultType="com.heima.dto.AdminDtos$ClientUserRow">
+        SELECT
+            c.id,
+            c.email,
+            c.name,
+            c.enabled,
+            c.created_at AS createdAt,
+            c.last_login_at AS lastLoginAt,
+            (SELECT COUNT(*) FROM rk_ai_qa q WHERE q.email = c.email) AS qaCount
+        FROM rk_client c
+        <where>
+            <if test="q != null and q != ''">
+                AND (c.email LIKE CONCAT('%', #{q}, '%') OR c.name LIKE CONCAT('%', #{q}, '%'))
+            </if>
+        </where>
+        ORDER BY IFNULL(c.last_login_at, c.created_at) DESC, c.id DESC
+    </select>
 </mapper>

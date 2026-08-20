@@ -2,6 +2,8 @@ package com.heima.controller;
 
 import com.heima.dto.AdminDtos.AiQaQuery;
 import com.heima.dto.AdminDtos.ClientIpRow;
+import com.heima.dto.AdminDtos.ClientUserRow;
+import com.heima.dto.AdminDtos.ClientUserToggleRequest;
 import com.heima.dto.AdminDtos.DashboardStats;
 import com.heima.dto.AdminDtos.LoginRequest;
 import com.heima.dto.AdminDtos.LoginResponse;
@@ -13,8 +15,10 @@ import com.heima.dto.EssayAiDtos.ApiError;
 import com.heima.entity.AdminUser;
 import com.heima.entity.AiQaLog;
 import com.heima.entity.RkSubject;
+import com.heima.mapper.ClientUserMapper;
 import com.heima.service.AdminAuthService;
 import com.heima.service.AiQaLogService;
+import com.heima.service.ClientAuthService;
 import com.heima.service.SubjectAdminService;
 import com.heima.web.AdminAuthInterceptor;
 import io.swagger.v3.oas.annotations.Operation;
@@ -39,14 +43,20 @@ public class AdminController {
     private final AdminAuthService adminAuthService;
     private final SubjectAdminService subjectAdminService;
     private final AiQaLogService aiQaLogService;
+    private final ClientUserMapper clientUserMapper;
+    private final ClientAuthService clientAuthService;
 
     public AdminController(
             AdminAuthService adminAuthService,
             SubjectAdminService subjectAdminService,
-            AiQaLogService aiQaLogService) {
+            AiQaLogService aiQaLogService,
+            ClientUserMapper clientUserMapper,
+            ClientAuthService clientAuthService) {
         this.adminAuthService = adminAuthService;
         this.subjectAdminService = subjectAdminService;
         this.aiQaLogService = aiQaLogService;
+        this.clientUserMapper = clientUserMapper;
+        this.clientAuthService = clientAuthService;
     }
 
     @Operation(summary = "管理员登录")
@@ -101,6 +111,19 @@ public class AdminController {
     @GetMapping("/clients")
     public List<ClientIpRow> clients(@RequestParam(required = false, defaultValue = "") String ip) {
         return aiQaLogService.clients(ip);
+    }
+
+    @GetMapping("/users")
+    public List<ClientUserRow> users(@RequestParam(required = false, defaultValue = "") String q) {
+        return clientUserMapper.selectAdminList(q == null ? "" : q.trim());
+    }
+
+    @PostMapping("/users/toggle")
+    public ApiError toggleUser(@RequestBody ClientUserToggleRequest body) {
+        clientAuthService.setEnabled(
+                body == null ? null : body.id(),
+                body != null && Boolean.TRUE.equals(body.enabled()));
+        return new ApiError("ok");
     }
 
     @GetMapping("/qa")

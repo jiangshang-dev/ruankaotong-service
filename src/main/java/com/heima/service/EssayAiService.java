@@ -114,14 +114,14 @@ public class EssayAiService {
         return parseGuide(raw);
     }
 
-    public EssayGuideHistoryResponse listGuideHistory(String subjectId, String fileName) {
-        return historyService.list(subjectId, fileName);
+    public EssayGuideHistoryResponse listGuideHistory(String subjectId, String fileName, String email) {
+        return historyService.list(subjectId, fileName, email);
     }
 
     /**
      * 论文指导流式输出：HarnessAgent.streamEvents，接口直接返回 Flux。
      */
-    public Flux<EssayGuideStreamEvent> guideStream(EssayGuideRequest req) {
+    public Flux<EssayGuideStreamEvent> guideStream(EssayGuideRequest req, String email) {
         List<EssayImage> images = normalizeImages(req == null ? null : req.images());
         if (images.isEmpty() && (req == null || !StringUtils.hasText(req.topic()))) {
             throw new IllegalArgumentException("请先填写或粘贴论文题目后再指导");
@@ -133,7 +133,7 @@ public class EssayAiService {
 
         String recordId = UUID.randomUUID().toString().replace("-", "");
         long createdAt = System.currentTimeMillis();
-        String subjectId = EssayGuideHistoryService.userId(req == null ? null : req.subjectId());
+        String subjectId = EssayGuideHistoryService.userId(req == null ? null : req.subjectId(), email);
         String fileName = EssayGuideHistoryService.sessionId(req == null ? null : req.fileName());
         StringBuilder acc = new StringBuilder();
         StringBuilder preview = new StringBuilder();

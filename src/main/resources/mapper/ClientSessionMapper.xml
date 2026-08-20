@@ -23,4 +23,8 @@
     <delete id="deleteExpired">
         DELETE FROM rk_client_session WHERE expire_at &lt;= NOW()
     </delete>
+
+    <delete id="deleteByClientId">
+        DELETE FROM rk_client_session WHERE client_id = #{clientId}
+    </delete>
 </mapper>

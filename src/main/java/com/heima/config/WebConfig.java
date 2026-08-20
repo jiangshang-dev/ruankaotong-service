@@ -36,9 +36,6 @@ public class WebConfig implements WebMvcConfigurer {
                 .excludePathPatterns(
                         "/api/ai/essay/health",
                         "/api/ai/case/health",
-                        "/api/ai/knowledge/health",
-                        "/api/ai/essay/guide/history",
-                        "/api/ai/case/explain/history",
-                        "/api/ai/knowledge/tutor/history");
+                        "/api/ai/knowledge/health");
     }
 }

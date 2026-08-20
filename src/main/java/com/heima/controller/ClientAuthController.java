@@ -3,6 +3,7 @@ package com.heima.controller;
 import com.heima.dto.ClientAuthDtos.ClientLoginResponse;
 import com.heima.dto.ClientAuthDtos.EmailLoginRequest;
 import com.heima.dto.ClientAuthDtos.SendCodeRequest;
+import com.heima.dto.ClientAuthDtos.UpdateProfileRequest;
 import com.heima.dto.EssayAiDtos.ApiError;
 import com.heima.entity.ClientUser;
 import com.heima.service.ClientAuthService;
@@ -54,7 +55,21 @@ public class ClientAuthController {
         if (user == null) {
             throw new IllegalArgumentException("请先登录后再使用 AI");
         }
+        if (!ClientAuthService.isEnabled(user)) {
+            throw new IllegalArgumentException("账号已禁用，请联系管理员");
+        }
         return new ClientLoginResponse("", user.getEmail(), user.getName());
+    }
+
+    @PostMapping("/profile")
+    public ClientLoginResponse profile(HttpServletRequest request, @RequestBody UpdateProfileRequest body) {
+        ClientUser user = (ClientUser) request.getAttribute(ClientAuthInterceptor.ATTR_CLIENT);
+        if (user == null) {
+            String header = request.getHeader("Authorization");
+            String token = header != null && header.startsWith("Bearer ") ? header.substring(7).trim() : "";
+            user = clientAuthService.findByToken(token);
+        }
+        return clientAuthService.updateName(user, body == null ? "" : body.name());
     }
 
     @PostMapping("/logout")

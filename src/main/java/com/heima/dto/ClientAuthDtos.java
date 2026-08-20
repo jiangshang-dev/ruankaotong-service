@@ -11,6 +11,9 @@ public final class ClientAuthDtos {
     public record EmailLoginRequest(String email, String code) {
     }
 
+    public record UpdateProfileRequest(String name) {
+    }
+
     public record ClientLoginResponse(String token, String email, String name) {
     }
 }

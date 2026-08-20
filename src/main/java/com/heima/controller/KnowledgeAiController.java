@@ -58,7 +58,7 @@ public class KnowledgeAiController {
             question = "生成辅导";
         }
         return aiQaStreamRecorder.tap(
-                knowledgeAiService.tutorStream(request),
+                knowledgeAiService.tutorStream(request, ClientAuthInterceptor.email(http)),
                 ClientIp.from(http),
                 "知识点",
                 followUp ? "追问" : "综合知识辅导",
@@ -74,8 +74,9 @@ public class KnowledgeAiController {
     @GetMapping("/tutor/history")
     public EssayGuideHistoryResponse tutorHistory(
             @RequestParam(required = false, defaultValue = "") String subjectId,
-            @RequestParam(required = false, defaultValue = "") String fileName) {
-        return knowledgeAiService.listTutorHistory(subjectId, fileName);
+            @RequestParam(required = false, defaultValue = "") String fileName,
+            HttpServletRequest http) {
+        return knowledgeAiService.listTutorHistory(subjectId, fileName, ClientAuthInterceptor.email(http));
     }
 
     @Operation(summary = "健康检查", description = "用于确认综合知识 AI 服务可用")

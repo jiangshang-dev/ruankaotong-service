@@ -43,6 +43,13 @@ public class ClientAuthInterceptor implements HandlerInterceptor {
             response.getWriter().write("{\"message\":\"请先登录后再使用 AI\"}");
             return false;
         }
+        if (!ClientAuthService.isEnabled(user)) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            response.getWriter().write("{\"message\":\"账号已禁用，请联系管理员\"}");
+            return false;
+        }
         request.setAttribute(ATTR_CLIENT, user);
         return true;
     }

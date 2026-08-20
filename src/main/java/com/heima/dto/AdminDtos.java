@@ -32,6 +32,9 @@ public final class AdminDtos {
     public record SubjectToggleRequest(String id, Boolean enabled) {
     }
 
+    public record ClientUserToggleRequest(Long id, Boolean enabled) {
+    }
+
     public record AiQaQuery(
             String ip,
             String module,
@@ -58,6 +61,17 @@ public final class AdminDtos {
         private String modules;
         private String subject;
         private String email;
+    }
+
+    @lombok.Data
+    public static class ClientUserRow {
+        private Long id;
+        private String email;
+        private String name;
+        private LocalDateTime createdAt;
+        private LocalDateTime lastLoginAt;
+        private Integer enabled;
+        private Long qaCount;
     }
 
     public record PageResult<T>(long total, long page, long size, List<T> records) {
