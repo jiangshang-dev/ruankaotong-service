@@ -1,0 +1,27 @@
+# 软考智笔官网（静态页）
+#
+#   cd html
+#   docker compose up -d --build
+#
+# 浏览器访问 http://服务器IP:8080
+# 替换截图：把 PNG 放到 ./images/ ，文件名见 images/README.txt
+# 替换安装包：把客户端放到 ./downloads/ ，文件名见 downloads/README.txt
+# 截图和安装包通过数据卷挂载，替换后刷新浏览器即可，不必重新构建镜像。
+
+services:
+  site:
+    build: .
+    image: ruankao-zhibi-site:1.0
+    container_name: ruankao-zhibi-site
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - ./images:/usr/share/nginx/html/images:ro
+      - ./downloads:/usr/share/nginx/html/downloads:ro
+    healthcheck:
+      test: ["CMD-SHELL", "nginx -t"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 5s

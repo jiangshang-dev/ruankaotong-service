@@ -63,10 +63,10 @@ ruankao:
     port: ${MAIL_PORT:465}
     auth: true
     ssl-enable: true
-    from: ${MAIL_FROM:18747633468@163.com}
+    from: ${MAIL_FROM:wuzhixin666@163.com}
     from-name: ${MAIL_FROM_NAME:软考通}
-    user: ${MAIL_USER:18747633468@163.com}
-    pass: ${MAIL_PASS:EHJv28xzPCZTU8Bh}
+    user: ${MAIL_USER:wuzhixin666@163.com}
+    pass: ${MAIL_PASS:RVe5VbNd2KLpnHCL}
 
 mybatis-plus:
   mapper-locations: classpath:mapper/*.xml
