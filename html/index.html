@@ -3,19 +3,123 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>软考智笔 · 本地备考，智能落笔</title>
-  <meta name="description" content="软考智笔是面向软考考生的桌面备考工具：本地笔记、论文练习、案例分析，可选 AI 辅导。资料存在自己电脑里。">
+  <title>软考智笔 - 软考备考桌面工具 | 本地笔记、论文练习、案例分析、AI 辅导</title>
+  <meta name="description" content="软考智笔是面向软考考生的免费桌面备考软件，支持高项、系统架构设计师、软设等十一门科目。本地 Markdown 笔记、论文摘要正文练习、案例题识图作答，可选 AI 讲解润色评分。Windows 与 macOS 免费下载。">
+  <meta name="keywords" content="软考,软考备考,软考智笔,高项,信息系统项目管理师,系统架构设计师,软件设计师,软考论文,软考案例,软考笔记,AI辅导,桌面客户端">
+  <meta name="author" content="软考智笔">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="theme-color" content="#0f766e">
+  <link rel="canonical" href="https://www.fondia.top/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect rx='14' width='64' height='64' fill='%230d2924'/%3E%3Ctext x='32' y='44' text-anchor='middle' font-size='32' fill='%23d9f3ef' font-family='PingFang SC,sans-serif'%3E笔%3C/text%3E%3C/svg%3E">
+
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="zh_CN">
+  <meta property="og:site_name" content="软考智笔">
+  <meta property="og:title" content="软考智笔 - 软考备考桌面工具">
+  <meta property="og:description" content="本地笔记、论文练习、案例分析，可选 AI 辅导。资料保存在自己电脑，支持 Windows 与 macOS 免费下载。">
+  <meta property="og:url" content="https://www.fondia.top/">
+  <meta property="og:image" content="https://www.fondia.top/images/workspace.png">
+  <meta property="og:image:alt" content="软考智笔桌面工作区界面截图">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="软考智笔 - 软考备考桌面工具">
+  <meta name="twitter:description" content="本地笔记、论文练习、案例分析，可选 AI 辅导。Windows 与 macOS 免费下载。">
+  <meta name="twitter:image" content="https://www.fondia.top/images/workspace.png">
+
   <link rel="stylesheet" href="./css/site.css">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://www.fondia.top/#website",
+        "url": "https://www.fondia.top/",
+        "name": "软考智笔",
+        "description": "软考备考桌面工具官网",
+        "inLanguage": "zh-CN"
+      },
+      {
+        "@type": "SoftwareApplication",
+        "@id": "https://www.fondia.top/#software",
+        "name": "软考智笔",
+        "alternateName": ["Ruankao Zhibi", "软考通备考客户端"],
+        "applicationCategory": "EducationalApplication",
+        "operatingSystem": "Windows 10+, macOS 12+",
+        "softwareVersion": "1.0.0",
+        "description": "面向软考考生的桌面备考工作区：本地 Markdown 笔记、论文练习、案例分析，可选 AI 辅导、润色与评分。",
+        "url": "https://www.fondia.top/",
+        "downloadUrl": [
+          "https://myagentscope.oss-cn-beijing.aliyuncs.com/%E8%BD%AF%E8%80%83%E6%99%BA%E7%AC%94%20Setup%201.0.0.exe",
+          "https://myagentscope.oss-cn-beijing.aliyuncs.com/%E8%BD%AF%E8%80%83%E6%99%BA%E7%AC%94-1.0.0-arm64.dmg"
+        ],
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "CNY"
+        },
+        "featureList": [
+          "本地 Markdown 笔记管理",
+          "软考论文摘要与正文练习",
+          "案例分析题图作答",
+          "综合知识 AI 辅导",
+          "论文润色与评分",
+          "案例识图讲解",
+          "十一门软考科目目录隔离"
+        ],
+        "inLanguage": "zh-CN"
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://www.fondia.top/#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "软考智笔的笔记会不会上传到云端？",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "不会默认同步。文稿保存在你选择的本地文件夹中。只有在使用 AI 时，当前题目、笔记节选或截图才会发给服务端做辅导。"
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "软考智笔不登录能用吗？",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "能。新建、保存、排序、删除笔记都不需要登录。综合知识辅导、论文润色评分指导、案例识图评分讲解需要邮箱验证码登录。"
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "软考智笔的 AI 评分是官方成绩吗？",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "不是。论文评分按辅导用 75 分制，仅作备考参考，不代表软考官方成绩。"
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "软考智笔支持哪些操作系统？",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "支持 Windows 10 及以上，以及 macOS 12 及以上。"
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
 </head>
 <body>
   <header class="nav">
     <div class="wrap nav-inner">
-      <a class="brand" href="#top">
-        <span class="mark">笔</span>
+      <a class="brand" href="#top" aria-label="软考智笔首页">
+        <span class="mark" aria-hidden="true">笔</span>
         软考智笔
       </a>
-      <nav class="nav-links">
+      <nav class="nav-links" aria-label="页面导航">
         <a href="#features">功能</a>
         <a href="#shots">界面</a>
         <a href="#subjects">科目</a>
@@ -27,160 +131,156 @@
   </header>
 
   <main id="top">
-    <section class="wrap hero">
+    <section class="wrap hero" aria-labelledby="hero-title">
       <div>
-        <div class="kicker">Ruankao Zhibi  ·  V1.0</div>
-        <h1>把软考笔记、论文和案例，写在自己的电脑上。</h1>
+        <p class="kicker">Ruankao Zhibi · V1.0 · 软考备考桌面客户端</p>
+        <h1 id="hero-title">软考笔记、论文和案例，写在自己的电脑上</h1>
         <p class="lead">
-          软考智笔是桌面备考工作区。知识点、论文、案例按科目分开放；
-          编辑保存不强制登录。需要 AI 辅导、润色、评分时再邮箱验证码登录。
+          <strong>软考智笔</strong>是面向计算机技术与软件专业技术资格（水平）考试考生的桌面备考工作区。
+          综合知识笔记、论文练习、案例分析按科目分目录保存；编辑保存不强制登录，
+          需要 AI 辅导、润色、评分时再邮箱验证码登录。
         </p>
         <div class="hero-actions">
-          <a class="btn btn-primary" href="https://myagentscope.oss-cn-beijing.aliyuncs.com/%E8%BD%AF%E8%80%83%E9%80%9A%20Setup%201.0.0.exe">下载 Windows 版</a>
-          <a class="btn btn-ghost" href="https://myagentscope.oss-cn-beijing.aliyuncs.com/%E8%BD%AF%E8%80%83%E9%80%9A-1.0.1-arm64.dmg">下载 macOS 版</a>
+          <a class="btn btn-primary" href="https://myagentscope.oss-cn-beijing.aliyuncs.com/%E8%BD%AF%E8%80%83%E6%99%BA%E7%AC%94%20Setup%201.0.0.exe" rel="noopener">下载 Windows 版</a>
+          <a class="btn btn-ghost" href="https://myagentscope.oss-cn-beijing.aliyuncs.com/%E8%BD%AF%E8%80%83%E6%99%BA%E7%AC%94-1.0.0-arm64.dmg" rel="noopener">下载 macOS 版</a>
         </div>
         <div class="meta">
-          <span><b>Windows 10+</b> 安装包 / 便携版</span>
-          <span><b>macOS 12+</b> DMG</span>
+          <span><b>Windows 10+</b> 安装包</span>
+          <span><b>macOS 12+</b> Apple Silicon DMG</span>
           <span><b>资料本地保存</b> 不默认上传笔记</span>
         </div>
       </div>
-      <figure class="shot" aria-label="工作区截图占位">
-        <img src="images/workspace.png" alt="软考智笔工作区" onerror="this.style.display='none'">
-        <div class="shot-hint">
-          工作区截图留空，请自行替换
+      <figure class="shot">
+        <img src="images/workspace.png" alt="软考智笔桌面工作区：左侧科目列表、中间笔记列表、右侧知识点编辑与 AI 辅导面板" width="1280" height="800" loading="eager" decoding="async" onerror="this.style.display='none'">
+        <figcaption class="shot-hint">
+          工作区截图
           <small>images/workspace.png</small>
-        </div>
+        </figcaption>
       </figure>
     </section>
 
-    <section class="wrap section" id="features">
-      <h2>备考三件事，一个窗口做完</h2>
-      <p class="sub">选本地文件夹，选科目，开始写。AI 是加分项，不是门槛。</p>
+    <section class="wrap section" id="features" aria-labelledby="features-title">
+      <h2 id="features-title">软考备考三件事，一个窗口做完</h2>
+      <p class="sub">选择本地文件夹和考试科目后即可开始。AI 是加分项，不是使用门槛。</p>
       <div class="grid-3">
         <article class="card">
-          <div class="ico">知</div>
+          <div class="ico" aria-hidden="true">知</div>
           <h3>知识点笔记</h3>
-          <p>按科目整理综合知识。支持富文本、粘贴截图、拖动排序。文件就是本机 Markdown。</p>
+          <p>按科目整理软考综合知识考点。支持富文本、粘贴截图、拖动排序，文件保存为本机 Markdown。</p>
         </article>
         <article class="card">
-          <div class="ico">论</div>
+          <div class="ico" aria-hidden="true">论</div>
           <h3>论文练习</h3>
-          <p>题目、摘要、正文分区编辑。摘要约 300 字提示，正文按考试向字数显示。润色需确认才写回。</p>
+          <p>软考论文题目、摘要、正文分区编辑。摘要约 300 字提示，正文按考试向字数显示，润色需确认才写回。</p>
         </article>
         <article class="card">
-          <div class="ico">案</div>
+          <div class="ico" aria-hidden="true">案</div>
           <h3>案例分析</h3>
-          <p>粘贴题图、按题作答。可识图解答、评分和流式讲解，适合下午案例题。</p>
+          <p>粘贴下午案例题截图、按题号作答。支持识图解答、评分和流式讲解，适合软考案例科目备考。</p>
         </article>
         <article class="card">
-          <div class="ico">AI</div>
+          <div class="ico" aria-hidden="true">AI</div>
           <h3>智能辅导</h3>
-          <p>综合知识讲解与追问、论文指导与评分、案例解题思路。会话按登录邮箱隔离。</p>
+          <p>综合知识讲解与追问、论文指导与评分、案例解题思路。AI 会话按登录邮箱隔离，互不干扰。</p>
         </article>
         <article class="card">
-          <div class="ico">本</div>
+          <div class="ico" aria-hidden="true">本</div>
           <h3>本地优先</h3>
-          <p>根目录由你指定。服务端不托管笔记正文。换电脑带走文件夹即可。</p>
+          <p>笔记根目录由考生自行指定，服务端不托管笔记正文。换电脑只需带走本地文件夹。</p>
         </article>
         <article class="card">
-          <div class="ico">科</div>
+          <div class="ico" aria-hidden="true">科</div>
           <h3>十一门科目</h3>
-          <p>预置高项、架构、软设等常见科目。停用科目不会出现在列表里，本地旧文件仍保留。</p>
+          <p>预置高项、系统架构设计师、软件设计师等常见软考科目，每科独立目录互不覆盖。</p>
         </article>
       </div>
     </section>
 
-    <section class="wrap section steps" id="flow">
-      <h2>三步开始用</h2>
-      <p class="sub">安装之后，不注册也能记笔记。</p>
-      <div class="grid-3">
-        <article class="card">
-          <div class="step-no"></div>
+    <section class="wrap section steps" id="flow" aria-labelledby="flow-title">
+      <h2 id="flow-title">三步开始软考备考</h2>
+      <p class="sub">安装客户端后无需注册即可记笔记，降低上手成本。</p>
+      <ol class="grid-3" style="list-style:none;margin:0;padding:0;">
+        <li class="card">
+          <div class="step-no" aria-hidden="true"></div>
           <h3>选择本地文件夹</h3>
-          <p>作为笔记仓库。系统会按科目创建 notes、essays、cases 目录。</p>
-        </article>
-        <article class="card">
-          <div class="step-no"></div>
+          <p>作为软考笔记仓库。系统会按科目自动创建 notes、essays、cases 目录。</p>
+        </li>
+        <li class="card">
+          <div class="step-no" aria-hidden="true"></div>
           <h3>选择考试科目</h3>
-          <p>在知识点、论文、案例三个页签之间切换，互不覆盖。</p>
-        </article>
-        <article class="card">
-          <div class="step-no"></div>
+          <p>在知识点、论文、案例三个页签之间切换，高项、架构、软设等科目互不覆盖。</p>
+        </li>
+        <li class="card">
+          <div class="step-no" aria-hidden="true"></div>
           <h3>需要时再登录 AI</h3>
-          <p>邮箱验证码登录后，才能使用辅导、润色、评分和讲解。</p>
-        </article>
-      </div>
+          <p>邮箱验证码登录后，可使用辅导、润色、评分和案例讲解等 AI 功能。</p>
+        </li>
+      </ol>
     </section>
 
-    <section class="wrap section" id="shots">
-      <h2>界面预览</h2>
-      <p class="sub">下列为截图占位。请将对应 PNG 放到 images 目录，文件名保持不变即可显示。</p>
+    <section class="wrap section" id="shots" aria-labelledby="shots-title">
+      <h2 id="shots-title">软考智笔界面预览</h2>
+      <p class="sub">知识点笔记、论文练习、案例分析与 AI 辅导面板一览。</p>
       <div class="grid-2">
         <figure class="shot shot-wide">
-          <img src="images/notes.png" alt="知识点笔记" onerror="this.style.display='none'">
-          <div class="shot-hint">知识点笔记<small>images/notes.png</small></div>
+          <img src="images/notes.png" alt="软考智笔知识点笔记编辑界面，含富文本工具栏与综合知识 AI 辅导板" width="1280" height="720" loading="lazy" decoding="async" onerror="this.style.display='none'">
+          <figcaption class="shot-hint">知识点笔记<small>images/notes.png</small></figcaption>
         </figure>
         <figure class="shot shot-wide">
-          <img src="images/essay.png" alt="论文练习" onerror="this.style.display='none'">
-          <div class="shot-hint">论文练习<small>images/essay.png</small></div>
+          <img src="images/essay.png" alt="软考智笔论文练习界面，含题目区、摘要区、正文区与润色评分按钮" width="1280" height="720" loading="lazy" decoding="async" onerror="this.style.display='none'">
+          <figcaption class="shot-hint">论文练习<small>images/essay.png</small></figcaption>
         </figure>
         <figure class="shot shot-wide">
-          <img src="images/case.png" alt="案例分析" onerror="this.style.display='none'">
-          <div class="shot-hint">案例分析<small>images/case.png</small></div>
+          <img src="images/case.png" alt="软考智笔案例分析界面，支持粘贴题图与按题号作答" width="1280" height="720" loading="lazy" decoding="async" onerror="this.style.display='none'">
+          <figcaption class="shot-hint">案例分析<small>images/case.png</small></figcaption>
         </figure>
         <figure class="shot shot-wide">
-          <img src="images/ai.png" alt="AI 辅导" onerror="this.style.display='none'">
-          <div class="shot-hint">AI 辅导面板<small>images/ai.png</small></div>
+          <img src="images/ai.png" alt="软考智笔 AI 辅导面板，展示讲解内容与历史对话" width="1280" height="720" loading="lazy" decoding="async" onerror="this.style.display='none'">
+          <figcaption class="shot-hint">AI 辅导面板<small>images/ai.png</small></figcaption>
         </figure>
       </div>
     </section>
 
-    <section class="wrap section" id="subjects">
-      <h2>覆盖常见软考科目</h2>
-      <p class="sub">高级、中级、初级均可作为独立目录使用。</p>
-      <div class="chips">
-        <span class="chip">系统架构设计师<em>高级</em></span>
-        <span class="chip">信息系统项目管理师<em>高级</em></span>
-        <span class="chip">系统分析师<em>高级</em></span>
-        <span class="chip">网络规划设计师<em>高级</em></span>
-        <span class="chip">软件设计师<em>中级</em></span>
-        <span class="chip">网络工程师<em>中级</em></span>
-        <span class="chip">数据库系统工程师<em>中级</em></span>
-        <span class="chip">信息安全工程师<em>中级</em></span>
-        <span class="chip">多媒体应用设计师<em>中级</em></span>
-        <span class="chip">程序员<em>初级</em></span>
-        <span class="chip">网络管理员<em>初级</em></span>
-      </div>
+    <section class="wrap section" id="subjects" aria-labelledby="subjects-title">
+      <h2 id="subjects-title">覆盖常见软考科目</h2>
+      <p class="sub">高级、中级、初级资格均可作为独立备考目录使用，支持高项、架构、软设、网工等。</p>
+      <ul class="chips" style="list-style:none;margin:0;padding:0;">
+        <li class="chip">系统架构设计师<em>高级</em></li>
+        <li class="chip">信息系统项目管理师<em>高级</em></li>
+        <li class="chip">系统分析师<em>高级</em></li>
+        <li class="chip">网络规划设计师<em>高级</em></li>
+        <li class="chip">软件设计师<em>中级</em></li>
+        <li class="chip">网络工程师<em>中级</em></li>
+        <li class="chip">数据库系统工程师<em>中级</em></li>
+        <li class="chip">信息安全工程师<em>中级</em></li>
+        <li class="chip">多媒体应用设计师<em>中级</em></li>
+        <li class="chip">程序员<em>初级</em></li>
+        <li class="chip">网络管理员<em>初级</em></li>
+      </ul>
     </section>
 
-    <section class="wrap section" id="download">
+    <section class="wrap section" id="download" aria-labelledby="download-title">
       <div class="download-panel">
-        <h2>下载软考智笔客户端</h2>
-        <p class="sub">将安装包放到 downloads 目录并保持文件名，按钮即可直接下载。版本 V1.0。</p>
+        <h2 id="download-title">免费下载软考智笔客户端</h2>
+        <p class="sub">支持 Windows 与 macOS，当前版本 V1.0。安装后即可选择本地文件夹开始备考。</p>
         <div class="grid-3">
-          <div class="dl-card">
+          <article class="dl-card">
             <h3>Windows 安装版</h3>
-            <p>NSIS 安装包，适合长期使用。</p>
-            <a class="btn btn-primary" href="https://myagentscope.oss-cn-beijing.aliyuncs.com/%E8%BD%AF%E8%80%83%E9%80%9A%20Setup%201.0.0.exe">下载 .exe 安装包</a>
-          </div>
-<!--          <div class="dl-card">-->
-<!--            <h3>Windows 便携版</h3>-->
-<!--            <p>免安装，解压或直接运行即可。</p>-->
-<!--            <a class="btn btn-ghost" href="downloads/ruankao-zhibi-windows-portable.exe">下载便携版</a>-->
-<!--          </div>-->
-          <div class="dl-card">
-            <h3>macOS</h3>
-            <p>打开 DMG，拖到应用程序文件夹。</p>
-            <a class="btn btn-dark" href="https://myagentscope.oss-cn-beijing.aliyuncs.com/%E8%BD%AF%E8%80%83%E9%80%9A-1.0.1-arm64.dmg">下载 .dmg</a>
-          </div>
+            <p>NSIS 安装包，适合 Windows 10 及以上长期使用。</p>
+            <a class="btn btn-primary" href="https://myagentscope.oss-cn-beijing.aliyuncs.com/%E8%BD%AF%E8%80%83%E6%99%BA%E7%AC%94%20Setup%201.0.0.exe" rel="noopener">下载 Windows 安装包</a>
+          </article>
+          <article class="dl-card">
+            <h3>macOS Apple Silicon</h3>
+            <p>适用于 M 系列芯片 Mac，打开 DMG 后拖入应用程序文件夹。</p>
+            <a class="btn btn-dark" href="https://myagentscope.oss-cn-beijing.aliyuncs.com/%E8%BD%AF%E8%80%83%E6%99%BA%E7%AC%94-1.0.0-arm64.dmg" rel="noopener">下载 macOS DMG</a>
+          </article>
         </div>
       </div>
     </section>
 
-    <section class="wrap section faq" id="faq">
-      <h2>常见问题</h2>
-      <p class="sub">使用前可以先看这几条。</p>
+    <section class="wrap section faq" id="faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">软考智笔常见问题</h2>
+      <p class="sub">关于本地保存、登录与 AI 评分的说明。</p>
       <details open>
         <summary>笔记会不会上传到云端？</summary>
         <p>不会默认同步。文稿保存在你选择的本地文件夹中。只有在使用 AI 时，当前题目、笔记节选或截图才会发给服务端做辅导。</p>
@@ -195,14 +295,15 @@
       </details>
       <details>
         <summary>支持哪些系统？</summary>
-        <p>Windows 10 及以上，macOS 12 及以上。</p>
+        <p>Windows 10 及以上，macOS 12 及以上（Apple Silicon）。</p>
       </details>
     </section>
   </main>
 
   <footer>
     <div class="wrap">
-      软考智笔 V1.0 · 桌面备考辅助 · 本页截图与安装包由站点管理员自行替换 · 评分与例题仅为学习参考
+      <p style="margin:0 0 6px;">软考智笔 V1.0 · 软考备考桌面辅助软件</p>
+      <p style="margin:0;color:var(--muted);font-size:12px;">评分与例题仅为学习参考，不代表软考官方成绩 · 官网 https://www.fondia.top</p>
     </div>
   </footer>
 </body>

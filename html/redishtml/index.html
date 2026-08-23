@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Redis Manager — 多连接 Redis 桌面客户端</title>
+    <meta
+      name="description"
+      content="Redis Manager：多 Redis 连接、冒号分层树形 Key、批量删除、JSON 结构查看。免费下载 macOS 与 Windows 客户端。"
+    />
+    <link rel="icon" href="./assets/logo.png" type="image/png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Source+Sans+3:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="page-glow" aria-hidden="true"></div>
+
+    <header class="topbar">
+      <a class="topbar-brand" href="#top">
+        <img src="./assets/logo.png" width="28" height="28" alt="" />
+        <span>Redis Manager</span>
+      </a>
+      <nav class="topbar-nav">
+        <a href="#features">能力</a>
+        <a href="#download">下载</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="brand-mark">Redis Manager</p>
+          <h1>看清每一个 Key，管好每一台 Redis。</h1>
+          <p class="hero-lead">
+            多连接桌面客户端：冒号分层树、批量删除、多类型值与 JSON 结构查看，开箱即用。
+          </p>
+          <div class="cta-row" id="download">
+            <a class="btn btn-primary" id="primary-download" href="https://myagentscope.oss-cn-beijing.aliyuncs.com/Redis%20Manager-1.0.0-arm64.dmg">
+              下载 macOS（Apple Silicon）
+            </a>
+            <a class="btn btn-ghost" href="https://myagentscope.oss-cn-beijing.aliyuncs.com/Redis%20Manager%20Setup%201.0.0.exe">
+              下载 Windows
+            </a>
+          </div>
+          <p class="cta-note" id="platform-hint">当前推荐：Apple Silicon · v1.0.0</p>
+        </div>
+
+        <div class="hero-visual" aria-hidden="true">
+          <div class="visual-plane">
+            <img class="hero-logo" src="./assets/logo.png" alt="" />
+            <div class="visual-grid"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="features" id="features">
+        <article class="feature">
+          <h2>多服务同时在线</h2>
+          <p>本地、测试、生产多实例并行管理，一键切换数据库，连接配置本地加密保存。</p>
+        </article>
+        <article class="feature">
+          <h2>冒号即文件夹</h2>
+          <p>
+            <code>demo1:demo2:demo3</code>
+            自动展开成树形层级，扫描用 SCAN，生产库也能安心浏览。
+          </p>
+        </article>
+        <article class="feature">
+          <h2>批量删 · JSON 看</h2>
+          <p>勾选 Key 或整夹批量删除；string / hash / list / set / zset / stream 支持 JSON 结构展开。</p>
+        </article>
+      </section>
+
+      <section class="downloads">
+        <h2>选择你的平台</h2>
+        <p class="downloads-lead">首页直达安装包，版本 1.0.0</p>
+        <ul class="download-list">
+          <li>
+            <a href="https://myagentscope.oss-cn-beijing.aliyuncs.com/Redis%20Manager-1.0.0-arm64.dmg">
+              <strong>macOS Apple Silicon</strong>
+              <span>DMG · arm64</span>
+            </a>
+          </li>
+<!--          <li>-->
+<!--            <a href="./downloads/Redis-Manager-1.0.0-mac-intel.dmg">-->
+<!--              <strong>macOS Intel</strong>-->
+<!--              <span>DMG · x64</span>-->
+<!--            </a>-->
+<!--          </li>-->
+          <li>
+            <a href="https://myagentscope.oss-cn-beijing.aliyuncs.com/Redis%20Manager%20Setup%201.0.0.exe">
+              <strong>Windows</strong>
+              <span>Setup · x64</span>
+            </a>
+          </li>
+        </ul>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>Redis Manager</span>
+      <span>Vue 3 · TypeScript · Electron</span>
+    </footer>
+
+    <script src="./main.js"></script>
+  </body>
+</html>

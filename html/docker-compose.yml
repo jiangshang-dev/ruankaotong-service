@@ -1,12 +1,17 @@
-# 软考智笔官网（静态页）
+# 官网 + Redis Manager（同一容器，路径区分）
+#
+#   https://www.fondia.top/            软考智笔
+#   https://www.fondia.top/redishtml/  Redis Manager
+#
+# 证书：
+#   /home/docker/ssl/www.fondia.top.pem
+#   /home/docker/ssl/www.fondia.top.key
 #
 #   cd html
 #   docker compose up -d --build
 #
-# 浏览器访问 http://服务器IP:8080
-# 替换截图：把 PNG 放到 ./images/ ，文件名见 images/README.txt
-# 替换安装包：把客户端放到 ./downloads/ ，文件名见 downloads/README.txt
-# 截图和安装包通过数据卷挂载，替换后刷新浏览器即可，不必重新构建镜像。
+# 截图 ./images/ ；软考安装包 ./downloads/ ；
+# Redis 页静态文件 ./redishtml/ （已挂载，改完刷新即可）
 
 services:
   site:
@@ -15,10 +20,14 @@ services:
     container_name: ruankao-zhibi-site
     restart: unless-stopped
     ports:
-      - "8080:80"
+      - "80:80"
+      - "443:443"
     volumes:
       - ./images:/usr/share/nginx/html/images:ro
       - ./downloads:/usr/share/nginx/html/downloads:ro
+      - ./redishtml:/usr/share/nginx/html/redishtml:ro
+      - ${SSL_DIR:-/home/docker/ssl}/www.fondia.top.pem:/etc/nginx/ssl/www.fondia.top.pem:ro
+      - ${SSL_DIR:-/home/docker/ssl}/www.fondia.top.key:/etc/nginx/ssl/www.fondia.top.key:ro
     healthcheck:
       test: ["CMD-SHELL", "nginx -t"]
       interval: 20s

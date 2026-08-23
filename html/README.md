@@ -1,26 +1,41 @@
-# 软考智笔官网
+# 软考智笔官网 + Redis Manager
 
-静态宣传页，含 Windows / macOS 客户端下载入口。截图与安装包由你自行放入对应目录。
+一次 `docker compose up` 部署两个静态站，用路径区分：
+
+| 路径 | 站点 |
+|---|---|
+| https://www.fondia.top/ | 软考智笔 |
+| https://www.fondia.top/redishtml/ | Redis Manager |
 
 ## 本地预览
-
-用浏览器直接打开 `index.html`，或：
 
 ```bash
 cd html
 python3 -m http.server 8080
 ```
 
-访问 http://127.0.0.1:8080
+- 软考智笔：http://127.0.0.1:8080/
+- Redis Manager：http://127.0.0.1:8080/redishtml/
 
-## Docker 部署
+## Docker 部署（域名 www.fondia.top）
+
+证书放到服务器 `/home/docker/ssl/`：
+
+- `www.fondia.top.pem`
+- `www.fondia.top.key`
+
+DNS 把 `www.fondia.top`（建议同时加 `fondia.top`）A 记录指到本机。宿主机 **80 / 443** 不要被占用。
 
 ```bash
 cd html
 docker compose up -d --build
 ```
 
-访问 http://服务器IP:8080
+证书不在默认路径时：
+
+```bash
+SSL_DIR=/你的证书目录 docker compose up -d --build
+```
 
 停止：
 
@@ -28,11 +43,16 @@ docker compose up -d --build
 docker compose down
 ```
 
-改端口：编辑 `docker-compose.yml` 里的 `"8080:80"`，左边是宿主机端口。
+## 目录说明
 
-## 替换截图
+| 目录 | 用途 |
+|---|---|
+| `./`（index.html、css） | 软考智笔官网 |
+| `./redishtml/` | Redis Manager 宣传页（已挂载，改完刷新即可） |
+| `./images/` | 软考智笔截图 |
+| `./downloads/` | 软考智笔安装包 |
 
-把 PNG 放到 `images/`：
+### 软考智笔截图
 
 | 文件 | 用途 |
 |---|---|
@@ -42,11 +62,7 @@ docker compose down
 | case.png | 案例 |
 | ai.png | AI 面板 |
 
-`images` 已挂载进容器，替换后刷新浏览器即可。
-
-## 替换安装包
-
-把客户端放到 `downloads/`：
+### 软考智笔安装包
 
 | 文件 | 平台 |
 |---|---|
@@ -54,4 +70,4 @@ docker compose down
 | ruankao-zhibi-windows-portable.exe | Windows 便携版 |
 | ruankao-zhibi-macos.dmg | macOS |
 
-打包完成后把 electron-builder 产物改成上述文件名再上传。
+Redis Manager 下载链目前指向 OSS；logo 放在 `redishtml/assets/logo.png`。
