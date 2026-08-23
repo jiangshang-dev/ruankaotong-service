@@ -41,7 +41,7 @@ ruankao:
   ai:
     base-url: ${LLM_BASE_URL:https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1}
     model-name: ${LLM_MODEL_NAME:qwen3.8-max}
-    api-key: ${LLM_API_KEY:sk-sp-H.XMLRH.Y6F9.MEUCIEAtQ0KSpVo5OwewjAnhy2YIESrnbBxmDXpZ9sxlN5MHAiEAzVX9zCHyiRgSn8KbOL7zlwrolV6MdsYmcEbazO3FS1U}
+    api-key: ${LLM_API_KEY:你的key}
     stream: false
     # 系统提示词文件（classpath:prompts/ 下）
     polish-prompt: classpath:prompts/ruankao-polish-system.txt
