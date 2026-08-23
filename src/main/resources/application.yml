@@ -8,9 +8,9 @@ spring:
   application:
     name: ruankao-back
   datasource:
-    url: jdbc:mysql://${MYSQL_HOST:localhost}:3306/${MYSQL_DB:ruankao}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=true&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://${MYSQL_HOST:rm-2zewdohwf3z10y6ru6o.mysql.rds.aliyuncs.com}:3306/${MYSQL_DB:ruankao}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=true&allowPublicKeyRetrieval=true
     username: ${MYSQL_USER:jeecg}
-    password: ${MYSQL_PASSWORD:123321}
+    password: ${MYSQL_PASSWORD:Ling@7ujm}
     hikari:
       maximum-pool-size: 5
       minimum-idle: 1
